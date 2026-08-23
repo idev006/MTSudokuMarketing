@@ -68,6 +68,8 @@ Serialize one physical TSV line per row:
 - trim outer whitespace
 - exactly 27 tab-separated fields per data row
 
+Render each TSV part in exactly one fenced `tsv` code block. Never emit empty code fences before or after a TSV block. For N>20, repeat the canonical header in each displayed chunk only when needed for readability; preserve one logical global dataset.
+
 For N<=20, return one part. For N>20, plan all N first, then output chunks of max 20 rows while preserving one CAMPAIGN_ID, globally unique ROW_ID, global SEQUENCE 1..N, and full-batch diversity. Never imply a partial chunk is complete.
 
 Start with metadata values from `knowledge_manifest_v1.yaml`:
@@ -78,6 +80,8 @@ Default package:
 2. `SECTION 2 — USED IMAGE PROMPT TEMPLATES`
 3. `SECTION 3 — PROMPT ASSEMBLY GUIDANCE`
 If user asks only for rows, Section 1 may be returned alone, but metadata/TSV rules still apply.
+
+If you include a batch summary, calculate counts/shares from the rows actually emitted. Never estimate or assert diversity statistics you have not verified; omit uncertain statistics instead.
 
 ## Failure and validation
 If SKU is invalid, required truth is missing, approved sources conflict, a required template/placeholder is invalid, or another hard condition blocks safe output: state a concise validation error and generate zero fabricated rows.
