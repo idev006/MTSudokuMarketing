@@ -1,55 +1,83 @@
+# BiiigBee Image Prompt Template Library v1.0
+# Resolution model: Content Row + SKU Lookup + Template
+# Never invent missing product-owned placeholders.
+
+[TEMPLATE_ID: IMG-PRODUCT-HERO-V1]
+Create a premium commercial product-hero advertising image for the educational publishing brand "{{BRAND_NAME}}".
+Product: {{PRODUCT_NAME}} | SKU: {{SKU}} | Grade: {{GRADE_BAND}} | Difficulty: {{DISPLAY_DIFFICULTY}}.
+Marketing objective: {{OBJECTIVE}}. Audience: {{AUDIENCE}}. Angle: {{MARKETING_ANGLE}}.
+Place the workbook as the dominant subject. Product placement: {{PRODUCT_PLACEMENT}}. Supporting scene: {{VISUAL_SCENE}}. Mood: {{VISUAL_EMOTION}}.
+Composition must preserve {{TEXT_SAFE_ZONE}} for later overlay "{{TEXT_OVERLAY}}". Do not render Thai headline text inside the image.
+Output: {{ASPECT_RATIO}}, {{IMAGE_SIZE}}, optimized for {{PLATFORM}}.
+Premium educational publishing style; clean, trustworthy, polished. No watermark, gibberish text, fake official logos, distorted Sudoku grids, or misleading packaging claims.
+
 [TEMPLATE_ID: IMG-LIFESTYLE-V1]
+Create a premium lifestyle advertising image for "{{BRAND_NAME}}" and {{PRODUCT_NAME}} ({{SKU}}), grade {{GRADE_BAND}}, difficulty {{DISPLAY_DIFFICULTY}}.
+Audience: {{AUDIENCE}}. Objective: {{OBJECTIVE}}. Angle: {{MARKETING_ANGLE}}.
+Show {{VISUAL_SUBJECT}} naturally in {{VISUAL_SCENE}} with emotion {{VISUAL_EMOTION}}. Integrate the workbook according to {{PRODUCT_PLACEMENT}} without making the scene feel staged.
+Reserve {{TEXT_SAFE_ZONE}} for later text "{{TEXT_OVERLAY}}"; no Thai headline rendered in-image.
+Output: {{ASPECT_RATIO}}, {{IMAGE_SIZE}}, {{PLATFORM}}. Premium, warm, credible educational lifestyle photography/illustration. No watermark, random text, fake official marks, distorted grids, or false physical-product implications.
 
-Create a premium commercial social-media advertising image
-for the educational publishing brand "{{BRAND_NAME}}".
+[TEMPLATE_ID: IMG-PARENT-CHILD-V1]
+Create a premium parent-child educational advertising scene for "{{BRAND_NAME}}" featuring {{PRODUCT_NAME}} ({{SKU}}).
+Target: {{AUDIENCE}}. Objective: {{OBJECTIVE}}. Angle: {{MARKETING_ANGLE}}.
+Show a supportive parent/guardian and age-appropriate child engaging with Sudoku in {{VISUAL_SCENE}}. Main activity: {{VISUAL_SUBJECT}}. Emotion: {{VISUAL_EMOTION}}. Product placement: {{PRODUCT_PLACEMENT}}.
+The interaction should communicate encouragement, confidence, and independent thinking rather than pressure.
+Leave {{TEXT_SAFE_ZONE}} for "{{TEXT_OVERLAY}}" to be added later. Output {{ASPECT_RATIO}}, {{IMAGE_SIZE}} for {{PLATFORM}}.
+No watermark, gibberish text, fake endorsements, exam claims, distorted Sudoku grids, or unsafe/age-inappropriate imagery.
 
-PRODUCT
-Brand: {{BRAND_NAME}}
-SKU: {{SKU}}
-Product: {{PRODUCT_NAME}}
-Grade band: {{GRADE_BAND}}
-Difficulty: {{DIFFICULTY}}
+[TEMPLATE_ID: IMG-STUDENT-ACTIVITY-V1]
+Create a premium student-activity visual for "{{BRAND_NAME}}" / {{PRODUCT_NAME}} ({{SKU}}), suitable for {{GRADE_BAND}} and difficulty {{DISPLAY_DIFFICULTY}}.
+Audience: {{AUDIENCE}}. Objective: {{OBJECTIVE}}. Angle: {{MARKETING_ANGLE}}.
+Show an age-appropriate student actively solving or exploring Sudoku. Subject: {{VISUAL_SUBJECT}}. Scene: {{VISUAL_SCENE}}. Emotion: {{VISUAL_EMOTION}}. Product placement: {{PRODUCT_PLACEMENT}}.
+Emphasize focus, curiosity, progress, and attainable challenge. Keep Sudoku marks plausible and visually clean.
+Reserve {{TEXT_SAFE_ZONE}} for later overlay "{{TEXT_OVERLAY}}". Output {{ASPECT_RATIO}}, {{IMAGE_SIZE}} for {{PLATFORM}}.
+No watermark, random/gibberish text, fake school logos, fake awards, or distorted grids.
 
-MARKETING OBJECTIVE
-Platform: {{PLATFORM}}
-Campaign objective: {{OBJECTIVE}}
-Target audience: {{AUDIENCE}}
-Marketing angle: {{MARKETING_ANGLE}}
+[TEMPLATE_ID: IMG-TEACHER-CLASSROOM-V1]
+Create a premium teacher/classroom marketing visual for "{{BRAND_NAME}}" featuring {{PRODUCT_NAME}} ({{SKU}}).
+Audience: {{AUDIENCE}}. Objective: {{OBJECTIVE}}. Angle: {{MARKETING_ANGLE}}.
+Show a credible learning environment in {{VISUAL_SCENE}} with {{VISUAL_SUBJECT}} as the focal activity. Emotion: {{VISUAL_EMOTION}}. Product placement: {{PRODUCT_PLACEMENT}}.
+Communicate practical teacher utility, structured practice, and positive student engagement without implying official school endorsement.
+Keep {{TEXT_SAFE_ZONE}} free for later "{{TEXT_OVERLAY}}". Output {{ASPECT_RATIO}}, {{IMAGE_SIZE}}, {{PLATFORM}}.
+No watermark, fake institution logos, fake official claims, gibberish text, or distorted Sudoku grids.
 
-VISUAL CONCEPT
-Visual type: {{VISUAL_TYPE}}
-Main subject: {{VISUAL_SUBJECT}}
-Scene: {{VISUAL_SCENE}}
-Emotion: {{VISUAL_EMOTION}}
+[TEMPLATE_ID: IMG-PUZZLE-CHALLENGE-V1]
+Create an energetic but educational Sudoku challenge visual for "{{BRAND_NAME}}" and {{PRODUCT_NAME}} ({{SKU}}).
+Audience: {{AUDIENCE}}. Objective: {{OBJECTIVE}}. Marketing angle: {{MARKETING_ANGLE}}.
+Visualize {{VISUAL_SUBJECT}} in {{VISUAL_SCENE}} with emotion {{VISUAL_EMOTION}}. Use dynamic composition and a clear sense of puzzle challenge while preserving age appropriateness and readability.
+Product placement: {{PRODUCT_PLACEMENT}}. Reserve {{TEXT_SAFE_ZONE}} for "{{TEXT_OVERLAY}}".
+Output {{ASPECT_RATIO}}, {{IMAGE_SIZE}} for {{PLATFORM}}.
+No fake timer/result claims, no guaranteed performance claims, no fake official competition branding, no gibberish text, no distorted grids.
 
-PRODUCT PRESENTATION
-Product placement: {{PRODUCT_PLACEMENT}}
-Show the BiiigBee Easy Maths workbook naturally and professionally.
-Maintain accurate product identity and age appropriateness.
+[TEMPLATE_ID: IMG-BENEFIT-V1]
+Create a premium benefit-led educational advertising visual for "{{BRAND_NAME}}" / {{PRODUCT_NAME}} ({{SKU}}).
+Audience: {{AUDIENCE}}. Objective: {{OBJECTIVE}}. Angle: {{MARKETING_ANGLE}}.
+Communicate the benefit through visual storytelling rather than unverified scientific claims. Main subject: {{VISUAL_SUBJECT}}. Scene: {{VISUAL_SCENE}}. Emotion: {{VISUAL_EMOTION}}. Product placement: {{PRODUCT_PLACEMENT}}.
+Use simple visual cues for practice, focus, logical progression, confidence, or convenience only when consistent with the approved marketing message.
+Reserve {{TEXT_SAFE_ZONE}} for later "{{TEXT_OVERLAY}}". Output {{ASPECT_RATIO}}, {{IMAGE_SIZE}} for {{PLATFORM}}.
+No medical/cognitive guarantee, fake statistics, watermark, gibberish text, or misleading product claims.
 
-COMPOSITION
-Text-safe area: {{TEXT_SAFE_ZONE}}
-Leave clean negative space for later text overlay.
-Do not render Thai headline text inside the generated image.
+[TEMPLATE_ID: IMG-INFOGRAPHIC-V1]
+Create a clean premium infographic-style visual for "{{BRAND_NAME}}" and {{PRODUCT_NAME}} ({{SKU}}).
+Audience: {{AUDIENCE}}. Objective: {{OBJECTIVE}}. Angle: {{MARKETING_ANGLE}}.
+Use {{VISUAL_SUBJECT}} and {{VISUAL_SCENE}} as the visual concept, with clear modular spaces for facts/icons. Product placement: {{PRODUCT_PLACEMENT}}. Mood: {{VISUAL_EMOTION}}.
+Do not invent statistics, prices, endorsements, rankings, or product facts. Reserve {{TEXT_SAFE_ZONE}} and structured empty areas for later text overlay "{{TEXT_OVERLAY}}"; avoid rendering long Thai copy in-image.
+Output {{ASPECT_RATIO}}, {{IMAGE_SIZE}} for {{PLATFORM}}.
+No watermark, fake data, gibberish text, fake official logos, or distorted Sudoku grids.
 
-TEXT OVERLAY INTENT
-Text to be added later:
-"{{TEXT_OVERLAY}}"
+[TEMPLATE_ID: IMG-COMPETITION-V1]
+Create a premium competition-preparation visual for "{{BRAND_NAME}}" featuring {{PRODUCT_NAME}} ({{SKU}}), intended for training/preparation messaging only.
+Audience: {{AUDIENCE}}. Objective: {{OBJECTIVE}}. Angle: {{MARKETING_ANGLE}}.
+Show {{VISUAL_SUBJECT}} in {{VISUAL_SCENE}} with a focused, aspirational emotion: {{VISUAL_EMOTION}}. Product placement: {{PRODUCT_PLACEMENT}}.
+Communicate disciplined practice and readiness for challenging puzzle environments without implying official affiliation, official questions, guaranteed results, or endorsement.
+Reserve {{TEXT_SAFE_ZONE}} for later "{{TEXT_OVERLAY}}". Output {{ASPECT_RATIO}}, {{IMAGE_SIZE}} for {{PLATFORM}}.
+No official event logos, medals implying verified wins, fake certificates, exam claims, watermark, gibberish text, or distorted grids.
 
-STYLE
-Premium educational publishing advertising,
-modern, trustworthy, friendly, polished,
-commercial-quality visual suitable for parents, teachers, and students.
-
-TECHNICAL OUTPUT
-Platform: {{PLATFORM}}
-Aspect ratio: {{ASPECT_RATIO}}
-Target size: {{IMAGE_SIZE}}
-
-NEGATIVE REQUIREMENTS
-No watermark.
-No random text.
-No gibberish Thai text.
-No fake official logos.
-No distorted Sudoku grids.
-No misleading physical-product packaging claims.
+[TEMPLATE_ID: IMG-PRODUCT-BOX-V1]
+Create a premium vertical digital product-box mockup for online promotion of {{PRODUCT_NAME}} ({{SKU}}) by "{{BRAND_NAME}}".
+Product context: grade {{GRADE_BAND}}, difficulty {{DISPLAY_DIFFICULTY}}, format {{PRODUCT_FORMAT}}.
+Audience: {{AUDIENCE}}. Objective: {{OBJECTIVE}}. Angle: {{MARKETING_ANGLE}}.
+Make the mockup clearly promotional/digital rather than physical shipping packaging. Product placement: {{PRODUCT_PLACEMENT}}. Supporting scene: {{VISUAL_SCENE}}. Emotion: {{VISUAL_EMOTION}}.
+Reserve {{TEXT_SAFE_ZONE}} for later "{{TEXT_OVERLAY}}". Output {{ASPECT_RATIO}}, {{IMAGE_SIZE}} for {{PLATFORM}}.
+Premium educational publishing look. No fake physical-box claim, watermark, random text, fake official marks, or distorted Sudoku grids.

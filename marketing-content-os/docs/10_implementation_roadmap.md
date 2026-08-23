@@ -1,99 +1,53 @@
 # 10 — Implementation Roadmap
 
 ## Phase 1 — Finalize v1 Contracts — COMPLETE
+Locked product requirements, system boundary, modes, row schema, output contract, integrity/quality gates, Shared Marketing Brain and acceptance philosophy.
 
-Locked:
-- product requirements / system boundary
-- General Mode minimum inputs
-- Advanced Mode override model
-- content row schema
-- output contract
-- system integrity and quality gates
-- Shared Marketing Brain contract
-- acceptance test plan
+## Phase 2 — Build Campaign Content Generator Implementation Package — COMPLETE
+Created production instructions, GPT Builder config, conversation starters, knowledge mapping, interaction flows and initial acceptance assets.
 
-## Phase 2 — Build Campaign Content Generator v1.0 Implementation Package — COMPLETE
+## Phase 3 — Production Readiness Hardening — COMPLETE
+Completed:
+- 10 approved image-prompt template families + registry
+- canonical controlled vocabulary / machine-readable taxonomy
+- v1 `IMAGE_PROMPT_MODE=FORMULA` lock
+- SKU Lookup / placeholder resolution contract
+- explicit knowledge/version manifest
+- TSV serialization/escaping contract
+- large-batch chunking protocol
+- expanded acceptance corpus TC-001..TC-032
+- independent deterministic validator specification
 
-Created:
-- production-ready system instructions
-- GPT Builder configuration spec
-- conversation starters
-- source-of-truth / knowledge mapping
-- General Mode interaction flow
-- Advanced Mode interaction flow
-- blocking/non-blocking input behavior
-- deterministic output behavior
-- v1 acceptance corpus
-- acceptance execution rubric
+Architecture for the v1 candidate is now frozen unless acceptance testing reveals a defect.
 
-Candidate release label:
-**BiiigBee Campaign Content Generator v1.0-rc1**
+## Phase 4 — Create GPT Builder Candidate — NEXT
+Build **BiiigBee Campaign Content Generator v1.0-rc1** using the approved system instructions, knowledge bundle, schemas, registries, prompt library and manifest.
 
-## Phase 3 — Build / Validate Prompt Template Library — NEXT IN PARALLEL
+Do not enable unnecessary web/image/actions integrations for the initial acceptance candidate.
 
-Validate and expand reusable visual prompt families, including:
-- Product Hero
-- Lifestyle
-- Parent-Child
-- Student Activity
-- Teacher/Classroom
-- Puzzle Challenge
-- Benefit / Infographic
-- Competition
-- Product Box
+## Phase 5 — Acceptance Testing — NEXT
+Execute TC-001..TC-032 across Standard + Competition SKUs, small/medium/large batches, invalid/missing inputs, unsafe overrides, controlled vocabulary, prompt lookup, TSV serialization, provenance and chunking.
 
-All template IDs used by Generator tests must resolve to an approved versioned template.
+Validation requires:
+- independent deterministic hard-gate checks
+- semantic/human review
 
-## Phase 4 — Acceptance Testing of Generator — NEXT
+## Phase 6 — Fix / Re-test Loop
+Classify failures by owning source: Marketing Plan data, instruction, schema/taxonomy, prompt template, serialization/chunking, or semantic generation quality. Fix the source, not individual output rows, then rerun affected tests + regression set.
 
-Run the acceptance corpus against:
-- Standard + Competition SKUs
-- N = 1, 5, 20, 30, 60 rows
-- General Mode
-- Advanced Mode overrides
-- invalid SKU cases
-- claim-safety cases
-- diversity and campaign-coherence cases
-- formula-mode IMAGE_PROMPT behavior
+## Phase 7 — Google Sheets Prompt Assembly Implementation
+Implement SKU lookup + approved template lookup + placeholder substitution + unresolved-placeholder validation for Formula Mode.
 
-Record hard gates and diagnostic rubric scores.
+## Phase 8 — Build Visual Prompt Refiner
+Only after Generator row contract and hard gates are stable. The specialist may refine creative execution but may not redefine product truth, audience, objective, campaign role, offer or claim policy.
 
-Do not declare v1.0 production-ready if any hard truth/safety/schema gate fails.
+## Phase 9 — Pilot Campaign
+Run at least one representative ~30-row campaign through human review and prompt assembly.
 
-## Phase 5 — Fix / Re-test Loop
-
-For each material failure:
-1. classify root cause: knowledge / instruction / schema / template / generation quality
-2. fix the owning source rather than patching individual output rows
-3. version changed contract/template/instruction where required
-4. rerun affected tests plus regression set
-
-## Phase 6 — Google Sheets Prompt Assembly
-
-- placeholder mapping
-- prompt-template version mapping
-- formula assembly
-- IMAGE_PROMPT column
-- validation
-
-## Phase 7 — Build Visual Prompt Refiner
-
-Build only after Campaign Content Generator row contract is stable and hard-gate tests pass.
-
-The specialist may refine creative execution but may not change SKU facts, audience, objective, campaign role, offer, or claim policy.
-
-## Phase 8 — Pilot Campaign
-
-Pilot at least one representative SKU with approximately 30 rows and complete human review.
-
-## Phase 9 — Portfolio Scale
-
-Expand production use across all 24 SKUs while keeping product truth in `marketing-plan/` and execution logic in `marketing-content-os/`.
+## Phase 10 — Portfolio Scale
+Expand production use across all 24 SKUs while retaining Marketing Plan as truth and Marketing Content OS as execution.
 
 ## Release Rule
+**Contracts → Generator Implementation → Production Hardening → GPT Candidate → Acceptance → Fix/Re-test → Prompt Assembly → Visual Refiner → Pilot → 24-SKU Scale**
 
-Release sequence:
-
-**Contracts → Generator Implementation → Acceptance Test → Fix/Re-test → Prompt Assembly → Visual Refiner → Pilot → 24-SKU Scale**
-
-Production v1.0 requires all hard gates to pass; before that use an RC label.
+Production v1.0 requires all hard gates to pass. Before that, use the RC label.

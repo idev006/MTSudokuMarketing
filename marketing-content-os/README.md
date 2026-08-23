@@ -1,72 +1,63 @@
 # BiiigBee Marketing Content OS — Design & Build Workspace
 
-สถานะ: **Campaign Content Generator v1.0 Implementation Package Ready — Acceptance Testing Next**  
+สถานะ: **Production Readiness Hardening Complete — Ready for GPT Builder Candidate + Acceptance Run**  
 แบรนด์: **BiiigBee Easy Maths**
 
-โฟลเดอร์นี้เก็บระบบออกแบบ ข้อกำหนด และ implementation package สำหรับ Marketing Content OS ซึ่งเปลี่ยนข้อมูลจาก Marketing Plan / SKU source of truth ให้เป็น campaign content แบบ batch ที่ต่อเนื่อง ตรวจสอบได้ และพร้อมเข้าสู่ workflow การผลิตจริง
+โฟลเดอร์นี้เก็บระบบออกแบบ ข้อกำหนด implementation package และ production-readiness contracts สำหรับ Marketing Content OS ซึ่งเปลี่ยน Marketing Plan / SKU source of truth ให้เป็น campaign content แบบ batch ที่ต่อเนื่อง ตรวจสอบได้ และพร้อมเข้าสู่ acceptance testing จริง
 
 ## System Boundary
-
-- **Marketing Plan = Truth** — เจ้าของ SKU, product facts, target, purpose, positioning, channels และ claim restrictions
-- **Marketing Content OS = Execution** — เจ้าของ campaign sequence, content rows, copy variation, visual parameters, prompt-template selection และ batch quality gates
+- **Marketing Plan = Truth** — SKU, product facts, target, purpose, positioning, channels, claim restrictions
+- **Marketing Content OS = Execution** — campaign sequence, content rows, copy variation, visual parameters, template selection, serialization, chunking, validation
 
 ## GPT Architecture
+1. **BiiigBee Campaign Content Generator v1.0-rc1** — next action: create GPT Builder candidate and run acceptance corpus
+2. **BiiigBee Visual Prompt Refiner** — build only after Generator hard gates and row contract stabilize
 
-1. **BiiigBee Campaign Content Generator** — GPT หลัก; implementation package v1 พร้อมสำหรับสร้าง GPT candidate และ acceptance test
-2. **BiiigBee Visual Prompt Refiner** — specialist; สร้างหลัง row contract ของ GPT หลัก stable และ Generator ผ่าน hard gates แล้ว
+## v1 Locked Decisions
+- General Mode minimum input = SKU + NUMBER_OF_ROWS
+- `PLATFORM=AUTO` resolves to one primary platform
+- Advanced Mode uses same engine + safe overrides
+- `IMAGE_PROMPT_MODE=FORMULA` only in v1
+- exact 27-field content-row schema remains unchanged
+- controlled vocabulary for machine-meaningful fields
+- 10 approved image-prompt template families
+- final prompt = Content Row + SKU Lookup + Approved Template
+- explicit knowledge/version manifest
+- one physical TSV line per content row
+- N>20 uses globally continuous chunks of max 20 rows
+- GPT self-check is not sufficient for production; independent deterministic validation is required
+- human review before publish
 
-## v1 Design Goals
+## Core Production-Readiness Documents
+- `docs/16_controlled_vocabulary.md`
+- `docs/17_prompt_lookup_contract.md`
+- `docs/18_version_manifest_contract.md`
+- `docs/19_tsv_serialization_contract.md`
+- `docs/20_large_batch_protocol.md`
+- `docs/21_deterministic_validator_spec.md`
 
-- ใช้งานง่ายสำหรับผู้ไม่มีพื้นฐานการตลาด
-- General Mode ใช้ input ขั้นต่ำ
-- Advanced Mode = engine เดียวกัน + overrides
-- สร้าง N content rows แบบ campaign ไม่ใช่โพสต์สุ่ม
-- ควบคุม diversity / selling frequency / claim safety
-- สร้าง copy + visual parameters + prompt template ID
-- `IMAGE_PROMPT` เป็น field สุดท้ายและว่างโดย default ใน formula mode
-- รองรับ TSV / Google Sheets และขยาย CSV/JSON ในอนาคต
-- Human review ก่อน publish
-
-## Core Documents
-
-### Foundation
-- `docs/01_system_vision.md`
-- `docs/02_general_and_advanced_modes.md`
-- `docs/03_content_row_schema.md`
-- `docs/04_image_prompt_template_architecture.md`
-- `docs/05_campaign_strategy_and_diversity.md`
-- `docs/06_workflow_and_process_engineering.md`
-- `docs/07_gpt_architecture.md`
-- `docs/08_output_file_spec.md`
-- `docs/09_design_review_and_recommendations.md`
-- `docs/10_implementation_roadmap.md`
-
-### v1 Production Contracts
-- `docs/11_gpt_product_requirements.md`
-- `docs/12_input_output_contract.md`
-- `docs/13_system_instruction_quality_gates.md`
-- `docs/14_shared_marketing_brain_contract.md`
-- `docs/15_acceptance_test_plan.md`
-
-### Campaign Content Generator v1 Implementation
+## Generator Implementation
 - `gpt/campaign_content_generator/system_instructions_v1.md`
 - `gpt/campaign_content_generator/gpt_builder_config_v1.md`
 - `gpt/campaign_content_generator/conversation_starters_v1.md`
 - `gpt/campaign_content_generator/knowledge_mapping_v1.md`
 - `gpt/campaign_content_generator/interaction_flow_v1.md`
 
-### Acceptance Test Assets
-- `tests/campaign_content_generator_acceptance_corpus_v1.tsv`
-- `tests/acceptance_execution_rubric_v1.md`
-
-### Schemas / Templates / Examples
+## Schemas / Prompt Infrastructure
 - `schemas/content_row_schema.tsv`
+- `schemas/sku_lookup_schema.tsv`
+- `schemas/controlled_vocabulary_v1.tsv`
+- `templates/prompt_template_registry_v1.tsv`
 - `templates/image_prompt_template_v1.txt`
 - `templates/google_sheets_formula_notes.md`
-- `examples/sample_campaign_output_structure.txt`
+- `knowledge_manifest_v1.yaml`
+
+## Acceptance
+- `tests/campaign_content_generator_acceptance_corpus_v1.tsv` — TC-001..TC-032
+- `tests/acceptance_execution_rubric_v1.md`
+- `docs/15_acceptance_test_plan.md`
 
 ## Current Decision
+**Architecture is frozen for the v1 candidate. Ready to create `BiiigBee Campaign Content Generator v1.0-rc1` in GPT Builder and execute acceptance testing.**
 
-**พร้อมสร้าง `BiiigBee Campaign Content Generator v1.0-rc1` ใน GPT Builder และเริ่ม acceptance testing ตาม corpus v1**
-
-ห้ามประกาศ Production v1.0 จนกว่าจะผ่าน hard gates ของ acceptance rubric ทั้งหมด
+Do not label Production v1.0 until independent deterministic hard gates and semantic/human review pass.
