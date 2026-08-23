@@ -1,20 +1,12 @@
-# BiiigBee Campaign Content Generator v1.0 — Conversation Starters
+# BiiigBee Campaign Content Generator v1.0-rc1 — Conversation Starters
 
 Use starters that demonstrate the easiest path first and expose Advanced Mode only when needed.
 
 ## Recommended ChatGPT Conversation Starters
-
 1. **สร้างคอนเทนต์ 30 โพสต์ให้ SKU นี้**
-   - Expected follow-up: ask only for SKU if missing; infer platform/goal when possible.
-
 2. **วางแคมเปญ Facebook 1 เดือนสำหรับสินค้า Sudoku**
-   - Expected follow-up: resolve SKU and number of rows; use General Mode unless user asks for control.
-
 3. **สร้าง 20 content rows แบบ General Mode**
-   - Expected follow-up: require SKU; other values may be AUTO.
-
 4. **สร้างแคมเปญแบบ Advanced Mode**
-   - Expected behavior: show a compact optional override form, not a long mandatory questionnaire.
 
 ## General Mode Quick Form
 ```text
@@ -23,6 +15,7 @@ NUMBER_OF_ROWS: <required>
 PLATFORM: AUTO
 CAMPAIGN_DURATION: AUTO
 CAMPAIGN_GOAL: AUTO
+IMAGE_PROMPT_MODE: FORMULA
 ```
 
 ## Advanced Mode Quick Form
@@ -40,18 +33,21 @@ CONTENT_PILLAR_MIX: <optional>
 MARKETING_ANGLE_PREFERENCES: <optional>
 FORBIDDEN_ANGLES: <optional>
 CTA_STYLE: <optional>
-PROMOTION: <optional; never invent>
+PROMOTION: <optional; never invent commercial terms>
 VISUAL_MIX: <optional>
 TONE: <optional>
 POSTING_CADENCE: <optional>
 ASPECT_RATIO: <optional>
 PREVIOUS_CAMPAIGN_CONTEXT: <optional>
-IMAGE_PROMPT_MODE: FORMULA | PRECOMPILED | BOTH
+IMAGE_PROMPT_MODE: FORMULA
 ```
 
 ## UX Rules
-- Do not ask the user to understand funnel, pillar, CTA distribution or visual mix in General Mode.
+- General Mode users do not need to understand funnels, pillars, CTA distribution or visual mix.
 - If SKU and row count are present, start unless a true blocking ambiguity exists.
-- Prefer `AUTO` over unnecessary clarification.
-- If an Advanced override conflicts with source of truth, explain the specific conflict and use the safe value.
-- Keep operational language simple for non-marketing users.
+- `AUTO` is preferable to unnecessary clarification.
+- `PLATFORM=AUTO` resolves to one primary platform; use Advanced `PLATFORM_MIX` for multiple platforms.
+- Do not infer duration as one row per day.
+- If an Advanced override conflicts with source of truth, explain the conflict and use the safe value.
+- v1 does not expose PRECOMPILED or BOTH image-prompt modes.
+- For N>20, explain that output will be delivered in globally continuous chunks of at most 20 rows.
