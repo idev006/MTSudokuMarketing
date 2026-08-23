@@ -1,6 +1,6 @@
 # BiiigBee Marketing Content OS — Design & Build Workspace
 
-สถานะ: **Production Readiness Hardening Complete — Ready for GPT Builder Candidate + Acceptance Run**  
+สถานะ: **GPT Definitions Documented + Canonical 24-SKU Lookup Ready — GPT Builder Candidate Creation Next**  
 แบรนด์: **BiiigBee Easy Maths**
 
 โฟลเดอร์นี้เก็บระบบออกแบบ ข้อกำหนด implementation package และ production-readiness contracts สำหรับ Marketing Content OS ซึ่งเปลี่ยน Marketing Plan / SKU source of truth ให้เป็น campaign content แบบ batch ที่ต่อเนื่อง ตรวจสอบได้ และพร้อมเข้าสู่ acceptance testing จริง
@@ -10,8 +10,17 @@
 - **Marketing Content OS = Execution** — campaign sequence, content rows, copy variation, visual parameters, template selection, serialization, chunking, validation
 
 ## GPT Architecture
-1. **BiiigBee Campaign Content Generator v1.0-rc1** — next action: create GPT Builder candidate and run acceptance corpus
-2. **BiiigBee Visual Prompt Refiner** — build only after Generator hard gates and row contract stabilize
+1. **BiiigBee Campaign Content Generator v1.0-rc1** — canonical Instructions พร้อม; ขั้นต่อไปคือสร้าง GPT Builder candidate และรัน acceptance corpus
+2. **BiiigBee Visual Prompt Refiner** — canonical specification/Instructions เขียนแล้ว แต่ **NOT FOR PRODUCTION YET** จน Generator hard gates และ row contract stable
+
+## Where GPTs / Instructions Live
+- GPT documentation index: `gpt/README.md`
+- GPT Builder setup guide: `gpt/GPT_BUILDER_SETUP_GUIDE.md`
+- Central location map: `docs/22_gpt_definitions_and_instruction_locations.md`
+- Campaign Generator Instructions: `gpt/campaign_content_generator/system_instructions_v1.md`
+- Campaign Generator Builder Config: `gpt/campaign_content_generator/gpt_builder_config_v1.md`
+- Visual Prompt Refiner Instructions: `gpt/visual_prompt_refiner/system_instructions_v1.md`
+- Visual Prompt Refiner Builder Config: `gpt/visual_prompt_refiner/gpt_builder_config_v1.md`
 
 ## v1 Locked Decisions
 - General Mode minimum input = SKU + NUMBER_OF_ROWS
@@ -35,17 +44,12 @@
 - `docs/19_tsv_serialization_contract.md`
 - `docs/20_large_batch_protocol.md`
 - `docs/21_deterministic_validator_spec.md`
-
-## Generator Implementation
-- `gpt/campaign_content_generator/system_instructions_v1.md`
-- `gpt/campaign_content_generator/gpt_builder_config_v1.md`
-- `gpt/campaign_content_generator/conversation_starters_v1.md`
-- `gpt/campaign_content_generator/knowledge_mapping_v1.md`
-- `gpt/campaign_content_generator/interaction_flow_v1.md`
+- `docs/22_gpt_definitions_and_instruction_locations.md`
 
 ## Schemas / Prompt Infrastructure
 - `schemas/content_row_schema.tsv`
-- `schemas/sku_lookup_schema.tsv`
+- `schemas/sku_lookup_schema.tsv` — schema only
+- `schemas/sku_lookup_v1.tsv` — populated canonical 24-SKU lookup
 - `schemas/controlled_vocabulary_v1.tsv`
 - `templates/prompt_template_registry_v1.tsv`
 - `templates/image_prompt_template_v1.txt`
@@ -55,9 +59,10 @@
 ## Acceptance
 - `tests/campaign_content_generator_acceptance_corpus_v1.tsv` — TC-001..TC-032
 - `tests/acceptance_execution_rubric_v1.md`
+- `tools/validate_campaign_output.py`
 - `docs/15_acceptance_test_plan.md`
 
 ## Current Decision
-**Architecture is frozen for the v1 candidate. Ready to create `BiiigBee Campaign Content Generator v1.0-rc1` in GPT Builder and execute acceptance testing.**
+**Architecture is frozen for the v1 candidate. GPT definitions and commands are documented in GitHub. Canonical 24-SKU lookup is populated. Next external action is to instantiate `BiiigBee Campaign Content Generator v1.0-rc1` in GPT Builder and run acceptance testing.**
 
 Do not label Production v1.0 until independent deterministic hard gates and semantic/human review pass.
