@@ -111,7 +111,7 @@ def validate(args):
     for i, row in enumerate(rows, start=1):
         for field in CONTROLLED_FIELDS:
             if field in allowed and row.get(field) not in allowed[field]:
-                fail(errors, f"row {i}: {field}={row.get(field')!r} is outside canonical taxonomy")
+                fail(errors, f"row {i}: {field}={row.get(field)!r} is outside canonical taxonomy")
 
     registry = load_template_registry(args.template_registry)
     for i, row in enumerate(rows, start=1):
