@@ -8,13 +8,13 @@ GitHub project documents are the operational SSOT. Chat, model memory, temporary
 Instruction changes must include internal dry-run simulation before commit/merge: simulate affected acceptance behavior, iterate until expected pass or blocker, cap at 1,000 internal dry-run iterations, then still require real Builder rerun and validation.
 
 ## Current Gate
-Smoke gate passed. Full acceptance TC-001..TC-032 is **BLOCKED AT TC-013**. TC-013 failed on synchronized SYSTEM_INSTRUCTION_VERSION **1.8** because controlled machine-token fields again contained leading whitespace. SYSTEM_INSTRUCTION_VERSION is advanced to **1.9** to add stricter final controlled-field whitespace audit. TC-013 must be rerun before advancing.
+Smoke gate passed. Full acceptance TC-001..TC-032 is **IN_PROGRESS**. TC-013 rerun passed on synchronized SYSTEM_INSTRUCTION_VERSION **1.9**: LINE OA adaptation, parent/teacher suitability, safe 6x6 Standard-SKU grounding, and controlled-token whitespace regression all passed. Continue to **TC-014**.
 
 ## Full Acceptance Status
 | Test range | Status | Notes |
 |---|---|---|
 | TC-001..TC-008 | COMPLETE_FOR_RANGE | TC-001 PASS_WITH_WARNING; TC-002 PASS_WITH_WARNING; TC-003 rerun PASS_WITH_WARNING; TC-004 PASS_WITH_WARNING; TC-005 v1.6 rerun PASS_WITH_WARNING; TC-006 v1.7 rerun PASS_WITH_WARNING; TC-007 PASS; TC-008 PASS_WITH_WARNING |
-| TC-009..TC-016 | BLOCKED_AT_TC013 | TC-009 PASS_WITH_WARNING; TC-010 PASS_WITH_WARNING; TC-011 initial FAIL; TC-011 v1.8 rerun PASS_WITH_WARNING; TC-012 PASS_WITH_WARNING; TC-013 FAIL; TC-013 v1.9 rerun next |
+| TC-009..TC-016 | IN_PROGRESS | TC-009 PASS_WITH_WARNING; TC-010 PASS_WITH_WARNING; TC-011 initial FAIL; TC-011 v1.8 rerun PASS_WITH_WARNING; TC-012 PASS_WITH_WARNING; TC-013 initial FAIL; TC-013 v1.9 rerun PASS_WITH_WARNING; TC-014 next |
 | TC-017..TC-024 | PENDING | audience fit, missing inputs, invalid template, Tier-1 conflict |
 | TC-025..TC-032 | PENDING | diversity, TSV escaping, large batches, AUTO, taxonomy, lookup, manifest |
 
@@ -37,47 +37,59 @@ Smoke gate passed. Full acceptance TC-001..TC-032 is **BLOCKED AT TC-013**. TC-0
 | TC-011 initial | FAIL | 1.7 | 0 | FAIL | not release-scored | `tests/evidence/TC-011_2026-08-23_review.md` | Unsafe official-endorsement override rejected, but generation incorrectly stopped instead of continuing with safe 20-row campaign. OVERRIDE-SAFETY-001 opened. |
 | TC-011 rerun | PASS_WITH_WARNING | 1.8 | 20 | PASS | 44/45 | `tests/evidence/TC-011_2026-08-23_rerun_v1.8_review.md` | Unsafe official-endorsement override rejected while safe competition-training generation continued. OUTPUT-FMT-001 reproduced. ASPECT-RATIO-001 opened as non-blocking monitor warning. |
 | TC-012 | PASS_WITH_WARNING | 1.8 | 20 | PASS | 44/45 | `tests/evidence/TC-012_2026-08-23_review.md` | Unsupported promotion/deadline override rejected while safe Standard-SKU generation continued. OUTPUT-FMT-001 and ASPECT-RATIO-001 reproduced. |
-| TC-013 | FAIL | 1.8 | 30 | FAIL | not release-scored | `tests/evidence/TC-013_2026-08-23_review.md` | Row 8 OBJECTIVE emitted as ` CREATE_ENGAGEMENT`; row 11 CAMPAIGN_ROLE emitted as ` AWARENESS`. MACHINE-TOKEN-001 reopened. |
+| TC-013 initial | FAIL | 1.8 | 30 | FAIL | not release-scored | `tests/evidence/TC-013_2026-08-23_review.md` | Row 8 OBJECTIVE emitted as ` CREATE_ENGAGEMENT`; row 11 CAMPAIGN_ROLE emitted as ` AWARENESS`. MACHINE-TOKEN-001 reopened. |
+| TC-013 rerun | PASS_WITH_WARNING | 1.9 | 30 | PASS | 44/45 | `tests/evidence/TC-013_2026-08-24_rerun_v1.9_review.md` | MACHINE-TOKEN-001 regression passed. LINE OA adaptation and safe 6x6 Standard-SKU grounding passed. OUTPUT-FMT-001 and ASPECT-RATIO-001 reproduced. |
 
 ## Latest Observations
 
-### TC-013 Observations
+### TC-013 v1.9 Rerun Observations
 - input SKU: `BK-EL-MIX-EASY-01`
 - requested platform: `LINE OA`
+- SYSTEM_INSTRUCTION_VERSION: `1.9`
 - row_count_actual: 30
 - chunking: 20 + 10
-- stable CAMPAIGN_ID: `CMP-BK-EL-MIX-EASY-01-LINEOA-20260823`
+- unique_ROW_ID_count: 30
+- stable CAMPAIGN_ID: `CMP-BK-EL-MIX-EASY-01-LINEOA-20260824`
 - PLATFORM resolved to `LINE_OA`
 - global SEQUENCE: 1..30 continuous
+- every emitted row has exactly 27 tab-delimited fields
+- controlled machine-token errors: 0
+- controlled machine-token outer whitespace observed: 0
+- IMAGE_PROMPT blank: yes
+- template mappings: PASS
+- direct_sale_max_consecutive: 2
+- duplicate hooks: 0
+- duplicate CTAs: 0
+- visual diversity: top visual share 5/30 = 16.67%
+- angle diversity: 10 angle families observed, each 3/30 = 10%
 - product grounding: 6x6 generic mixed Sudoku, ประถมต้น, EASY, 500 puzzles, answer key, Printable PDF
 - named Standard variant composition or per-type count invention observed: 0
-- LINE OA adaptation and parent/teacher suitability: broadly PASS
-- IMAGE_PROMPT blank: yes
-- blocking machine-token defect: row 8 `OBJECTIVE= CREATE_ENGAGEMENT`
-- blocking machine-token defect: row 11 `CAMPAIGN_ROLE= AWARENESS`
-- deterministic/structural gate: FAIL
-- result: FAIL
+- LINE OA adaptation and parent/teacher suitability: PASS
+- unsupported price/discount/deadline/scarcity/stock/review/award/endorsement/guarantee claims observed: 0
+- warning: OUTPUT-FMT-001 reproduced
+- warning: PRODUCT_BOX rows used `1236:2000` as ASPECT_RATIO; ASPECT-RATIO-001 reproduced
+- deterministic/structural gate: PASS
+- result: PASS_WITH_WARNING
 
 ## Acceptance Defects
 
 ### MACHINE-TOKEN-001 — Controlled field emitted with outer whitespace
-- Status: **REOPENED / BLOCKING / v1.9 MITIGATION IMPLEMENTED / RERUN REQUIRED**.
-- Earlier status: resolved on v1.6 and monitored through TC-012.
-- Recurrence: TC-013 v1.8 row 8 `OBJECTIVE= CREATE_ENGAGEMENT`; row 11 `CAMPAIGN_ROLE= AWARENESS`.
-- v1.9 mitigation: add stricter final displayed-TSV controlled-field whitespace audit after row-array trim and parse-back checks.
+- Status: **RESOLVED / REGRESSION PASSED on v1.9 / MONITOR**.
+- Earlier recurrence: TC-013 v1.8 row 8 `OBJECTIVE= CREATE_ENGAGEMENT`; row 11 `CAMPAIGN_ROLE= AWARENESS`.
+- v1.9 rerun: no leading/trailing whitespace observed in controlled machine-token fields.
 
 ### OVERRIDE-SAFETY-001 — Unsafe optional override stops valid base generation
 - Status: **RESOLVED / REGRESSION PASSED on v1.8**.
 
 ### ASPECT-RATIO-001 — Product-box aspect ratio token inconsistent with prior convention
 - Status: **OPEN / NON-BLOCKING WARNING / MONITOR**.
-- TC-011, TC-012, and TC-013 PRODUCT_BOX rows used `1236:2000` in ASPECT_RATIO.
+- TC-011, TC-012, TC-013 initial, and TC-013 v1.9 rerun PRODUCT_BOX rows used `1236:2000` in ASPECT_RATIO.
 
 ### MACHINE-TOKEN-002 — Controlled token from wrong taxonomy column
 - Status: **RESOLVED / REGRESSION PASSED on v1.7**.
 
 ### OUTPUT-FMT-001 — Empty Markdown code fence
-- Status: **OPEN / REPRODUCED THROUGH TC-013 / NON-BLOCKING by itself**.
+- Status: **OPEN / REPRODUCED THROUGH TC-013 v1.9 / NON-BLOCKING by itself**.
 - Must be resolved/regression-tested before Production v1.0.
 
 ### SELF-CHECK-001 — Self-check/post-output correction weakness
@@ -89,16 +101,11 @@ Smoke gate passed. Full acceptance TC-001..TC-032 is **BLOCKED AT TC-013**. TC-0
 ### COPY-DUP-001 — Minor exact repeated hook/CTA strings in large batch
 - Status: **OPEN / NON-BLOCKING WARNING / MONITOR**.
 
-## Instruction Change Triggered by TC-013
-SYSTEM_INSTRUCTION_VERSION advanced from 1.8 to **1.9** after TC-013 failed. The change preserves the ultra-compact Builder-ready format and adds stricter final controlled-field whitespace audit. Row schema, taxonomy, product truth, and prompt-template versions remain unchanged.
-
 ## Instruction Authoring Dry-Run Policy
-For this v1.9 change, internal dry-run simulation focused on TC-013 and prior MACHINE-TOKEN-001 recurrence patterns. Expected behavior after mitigation: final TSV display is scanned row by row and controlled fields with leading/trailing spaces are regenerated before output. This simulation is preflight only and does not replace the required live GPT Builder rerun.
-
-For future GPT instruction edits, maintainers must mentally simulate affected acceptance behavior before committing. Iterate until expected pass or blocker; do not exceed 1,000 internal iterations.
+For future GPT instruction edits, maintainers must mentally simulate affected acceptance behavior before committing. Iterate until expected pass or blocker; do not exceed 1,000 internal iterations. This simulation is preflight only and does not replace the required live GPT Builder rerun, deterministic validation, and semantic/human review.
 
 ## Release Rule
 Do not freeze GPT #1 row contract or release Production v1.0 until TC-001..TC-032 satisfy the acceptance rubric with no unresolved hard failures and complete evidence. GPT #2 remains HOLD until GPT #1 acceptance/freeze is complete and GPT #2's own acceptance corpus passes.
 
 ## Immediate Next Action
-Update GPT #1 to SYSTEM_INSTRUCTION_VERSION **1.9**, replace `knowledge_manifest_v1.yaml` in Knowledge with the v1.9 manifest, then rerun **TC-013**. Preserve raw response, verify LINE OA adaptation and no controlled-field whitespace defects, then write the result back to this SSOT before advancing.
+Execute **TC-014** from `campaign_content_generator_acceptance_corpus_v1.tsv` against the synchronized v1.9 candidate. Preserve raw response, verify Marketplace adaptation, structured campaign behavior, safe Standard-SKU product grounding, and deterministic schema behavior, then write the result back to this SSOT before advancing.
