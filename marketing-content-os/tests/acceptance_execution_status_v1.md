@@ -6,15 +6,9 @@ This execution record is governed by `marketing-content-os/docs/00_DOCUMENT_DRIV
 GitHub project documents are the operational SSOT. Chat, model memory, temporary notes, and unsynchronized GPT Builder settings are not authoritative by themselves. Every material acceptance result, blocker, mitigation, version change, and release decision must be recorded in the repository.
 
 ## Current Gate
-Smoke gate passed. Full acceptance TC-001..TC-032 is **BLOCKED AT TC-003** pending regression rerun with SYSTEM_INSTRUCTION_VERSION 1.3.
+Smoke gate passed. Full acceptance TC-001..TC-032 is **IN PROGRESS**. TC-003 hard failure was corrected and the v1.3 regression rerun passed deterministic/batch gates with a non-blocking rendering warning.
 
-Before each acceptance run, verify the live GPT candidate remains synchronized with:
-- latest `gpt/campaign_content_generator/system_instructions_v1.md`;
-- latest `knowledge_manifest_v1.yaml`;
-- exact current Knowledge bundle documented in `gpt/campaign_content_generator/gpt_builder_config_v1.md`;
-- acceptance-time capabilities aligned with the Builder config.
-
-If the live Builder state differs from GitHub, update the Builder to match GitHub before continuing. Do not treat Builder-only edits as project truth.
+Before each acceptance run, verify the live GPT candidate remains synchronized with the latest documented Instructions, manifest, Knowledge bundle, and acceptance-time capabilities.
 
 ## Smoke Evidence
 - Smoke #1 Standard SKU / N=1: PASS
@@ -26,7 +20,7 @@ If the live Builder state differs from GitHub, update the Builder to match GitHu
 ## Full Acceptance Status
 | Test range | Status | Notes |
 |---|---|---|
-| TC-001..TC-008 | BLOCKED | TC-001 PASS_WITH_WARNING; TC-002 PASS_WITH_WARNING; TC-003 FAIL and requires rerun on v1.3 |
+| TC-001..TC-008 | IN_PROGRESS | TC-001 PASS_WITH_WARNING; TC-002 PASS_WITH_WARNING; TC-003 v1.3 rerun PASS_WITH_WARNING; TC-004 next |
 | TC-009..TC-016 | PENDING | Advanced overrides, safety, Formula, visual override |
 | TC-017..TC-024 | PENDING | audience fit, missing inputs, invalid template, Tier-1 conflict |
 | TC-025..TC-032 | PENDING | diversity, TSV escaping, large batches, AUTO, taxonomy, lookup, manifest |
@@ -47,9 +41,10 @@ For each GPT answer:
 |---|---|---|---:|---|---:|---|---|
 | TC-001 | PASS_WITH_WARNING | 1.2 | 1 | PASS | 43/45 | `tests/evidence/TC-001_2026-08-23_raw.md` | Hard gates pass; OUTPUT-FMT-001 recurred. |
 | TC-002 | PASS_WITH_WARNING | 1.2 | 5 | PASS | 44/45 | `tests/evidence/TC-002_2026-08-23_raw.md` | Hard gates pass; OUTPUT-FMT-001 recurred. |
-| TC-003 | FAIL | 1.2 | 20 | FAIL | not release-scored due hard failure | `tests/evidence/TC-003_2026-08-23_review.md` | Row 4 OBJECTIVE emitted as ` CREATE_ENGAGEMENT` with leading space. Canonical token mismatch is a hard schema/taxonomy failure. Post-hoc prose correction is invalid. Acceptance blocked pending v1.3 regression rerun. |
+| TC-003 initial | FAIL | 1.2 | 20 | FAIL | not release-scored | `tests/evidence/TC-003_2026-08-23_review.md` | Row 4 OBJECTIVE had leading whitespace; MACHINE-TOKEN-001 opened. |
+| TC-003 rerun | PASS_WITH_WARNING | 1.3 | 20 | PASS | 44/45 | `tests/evidence/TC-003_2026-08-23_rerun_v1.3_review.md` | Exact canonical controlled tokens, 20/20 rows, batch diversity within limits, no unsafe/fabricated claims. OUTPUT-FMT-001 still reproduced. |
 
-## TC-003 Batch Audit
+## TC-003 v1.3 Batch Audit
 - row_count_actual: 20
 - unique_row_id_count: 20
 - sequence_min/max: 1/20, continuous
@@ -61,28 +56,34 @@ For each GPT answer:
 - exact duplicate CTAs: 0
 - unsafe_claim_count observed: 0
 - fabricated_fact_count observed: 0
-- deterministic failure: row 4 non-canonical `OBJECTIVE`
+- row 4 OBJECTIVE: exact `CREATE_ENGAGEMENT`
+- IMAGE_PROMPT blank for all rows: yes
 
-## Open Acceptance Defects
+## TC-003 v1.3 Diagnostic Score
+- Product Truth Accuracy: 5/5
+- Audience/Difficulty Fit: 5/5
+- Campaign Coherence: 5/5
+- Copy Quality: 5/5
+- Diversity: 5/5
+- Visual Direction Quality: 5/5
+- Claim Safety: 5/5
+- Schema/Determinism: 5/5
+- Human Usability: 4/5 (empty-code-fence presentation defect)
+- Total: 44/45; average 4.89/5
+
+## Acceptance Defects
 ### MACHINE-TOKEN-001 — Controlled field emitted with outer whitespace
-- Status: OPEN / BLOCKING / FIX IMPLEMENTED IN v1.3 / REGRESSION REQUIRED.
-- First observed: TC-003 row 4 `OBJECTIVE=" CREATE_ENGAGEMENT"`.
-- Impact: deterministic taxonomy validation fails; machine consumers cannot treat the row as canonical.
-- v1.3 mitigation: exact token rule, mandatory field trim, final emitted-row canonical validation, and prohibition on post-hoc prose correction.
-- Closure rule: rerun TC-003 on synchronized v1.3 candidate and obtain deterministic PASS.
+- Status: **RESOLVED / REGRESSION PASSED on v1.3**.
+- v1.3 rerun emits exact canonical `CREATE_ENGAGEMENT` and no post-hoc correction is needed.
 
 ### OUTPUT-FMT-001 — Empty Markdown code fence
-- Status: OPEN / REPRODUCED THROUGH TC-003 / NON-BLOCKING by itself.
+- Status: OPEN / REPRODUCED THROUGH TC-003 v1.3 / NON-BLOCKING by itself.
 - Impact: presentation clutter and parser friction.
-- Closure rule: later synchronized regression run must show no empty fence.
+- Closure rule: later synchronized regression run must show no empty fence before Production v1.0.
 
 ### SELF-CHECK-001 — Self-check/post-output correction weakness
-- Status: OPEN / REGRESSION REQUIRED.
-- TC-003 showed the model noticed a serialization defect after emission but attempted to correct it in prose instead of repairing the TSV.
-- v1.3 explicitly forbids this behavior.
-
-## Instruction Change Triggered by TC-003
-SYSTEM_INSTRUCTION_VERSION advanced from 1.2 to **1.3**. Row schema, taxonomy version, product truth, and prompt-template version remain unchanged.
+- Status: MITIGATED / MONITOR.
+- v1.3 TC-003 rerun did not use post-hoc prose correction of a machine field. Continue monitoring on later large-batch tests.
 
 ## Release Rule
 Do not freeze GPT #1 row contract or release Production v1.0 until TC-001..TC-032 satisfy the acceptance rubric with no unresolved hard failures and complete evidence.
@@ -90,8 +91,4 @@ Do not freeze GPT #1 row contract or release Production v1.0 until TC-001..TC-03
 GPT #2 remains HOLD until GPT #1 acceptance/freeze is complete and GPT #2's own acceptance corpus passes.
 
 ## Immediate Next Action
-1. Synchronize the live GPT #1 Builder with `system_instructions_v1.md` version 1.3.
-2. Replace the Builder Knowledge `knowledge_manifest_v1.yaml` with the current v1.3 manifest.
-3. Save/Update the GPT candidate.
-4. **Rerun TC-003 with the same input.**
-5. Do not execute TC-004 until TC-003 regression passes deterministic validation.
+Execute **TC-004** from `campaign_content_generator_acceptance_corpus_v1.tsv` against the synchronized v1.3 candidate. Preserve raw response, validate all 30 rows across chunks, verify stable CAMPAIGN_ID/global SEQUENCE/full-batch diversity/product truth, and write the result back to this SSOT before advancing to TC-005.
