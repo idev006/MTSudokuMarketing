@@ -1,0 +1,53 @@
+# BiiigBee Campaign Content Generator — Runtime Reference v1
+
+Purpose: compact, retrieval-friendly runtime constants for GPT Builder. This file mirrors approved canonical data and exists to reduce retrieval failures from TSV files. If this file conflicts with the canonical source files, stop and report the conflict.
+
+## Canonical Controlled Values
+
+### PLATFORM
+FACEBOOK, LINE_OA, MARKETPLACE, LANDING_PAGE
+
+### FUNNEL_STAGE
+AWARENESS, CONSIDERATION, CONVERSION, RETENTION
+
+### CAMPAIGN_ROLE
+AWARENESS, EDUCATION, PROBLEM_SOLUTION, ENGAGEMENT, PRODUCT_BENEFIT, USE_CASE, TRUST, CONVERSION, REMINDER, CROSS_SELL
+
+### VISUAL_TYPE
+PRODUCT_HERO, LIFESTYLE, PARENT_CHILD, STUDENT_ACTIVITY, TEACHER_CLASSROOM, PUZZLE_CHALLENGE, BENEFIT, INFOGRAPHIC, COMPETITION, PRODUCT_BOX
+
+### OBJECTIVE
+BUILD_AWARENESS, EDUCATE, CREATE_ENGAGEMENT, SHOW_PRODUCT_VALUE, BUILD_TRUST, DRIVE_CONSIDERATION, DRIVE_CONVERSION, RETENTION_CROSS_SELL
+
+### CONTENT_PILLAR
+EDUCATION, PARENT_TEACHER_INSIGHT, SKILL_DEVELOPMENT, CHALLENGE_ENGAGEMENT, PRODUCT_BENEFIT, USE_CASE, TRUST_CONFIDENCE, COMPETITION_PREPARATION, OFFER_CONVERSION, PORTFOLIO_PROGRESSION
+
+### MARKETING_ANGLE_FAMILY
+EASY_START, SKILL_PROGRESS, LOGIC_TRAINING, FOCUS_ACCURACY, CHALLENGE_MASTERY, VARIETY_MIX, PARENT_CONFIDENCE, TEACHER_UTILITY, PRINTABLE_CONVENIENCE, 500_PUZZLE_VALUE, COMPETITION_PREPARATION, PORTFOLIO_NEXT_STEP
+
+Serialize MARKETING_ANGLE as `FAMILY: short detail`.
+
+## Approved Visual → Prompt Template Mapping
+PRODUCT_HERO → IMG-PRODUCT-HERO-V1
+LIFESTYLE → IMG-LIFESTYLE-V1
+PARENT_CHILD → IMG-PARENT-CHILD-V1
+STUDENT_ACTIVITY → IMG-STUDENT-ACTIVITY-V1
+TEACHER_CLASSROOM → IMG-TEACHER-CLASSROOM-V1
+PUZZLE_CHALLENGE → IMG-PUZZLE-CHALLENGE-V1
+BENEFIT → IMG-BENEFIT-V1
+INFOGRAPHIC → IMG-INFOGRAPHIC-V1
+COMPETITION → IMG-COMPETITION-V1
+PRODUCT_BOX → IMG-PRODUCT-BOX-V1
+
+All mappings above are APPROVED for v1.0-rc1.
+
+## Canonical 27-field Output Order
+ROW_ID, SKU, CAMPAIGN_ID, SEQUENCE, PLATFORM, AUDIENCE, OBJECTIVE, FUNNEL_STAGE, CONTENT_PILLAR, MARKETING_ANGLE, CAMPAIGN_ROLE, HOOK, HEADLINE, CAPTION, CTA, HASHTAGS, VISUAL_TYPE, VISUAL_SUBJECT, VISUAL_SCENE, VISUAL_EMOTION, PRODUCT_PLACEMENT, TEXT_OVERLAY, TEXT_SAFE_ZONE, ASPECT_RATIO, IMAGE_SIZE, PROMPT_TEMPLATE_ID, IMAGE_PROMPT
+
+## Runtime Rules
+- IMAGE_PROMPT must be blank in rc1 FORMULA mode.
+- PLATFORM=AUTO is input-only and must resolve to one canonical platform in General Mode.
+- Valid SKU truth comes from `sku_source_of_truth.md`, `sku_marketing_plan_matrix.csv`, and `sku_lookup_v1.tsv`.
+- Competition messaging is training/preparation only unless approved source data explicitly allows stronger wording.
+- Do not fail merely because TSV retrieval is unavailable when the exact needed taxonomy/template constant is present in this approved runtime reference.
+- Do not infer missing SKU/product facts from this runtime reference; retrieve them from approved product sources.
