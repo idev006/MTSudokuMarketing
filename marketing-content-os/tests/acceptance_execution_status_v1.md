@@ -8,13 +8,13 @@ GitHub project documents are the operational SSOT. Chat, model memory, temporary
 Instruction changes must include internal dry-run simulation before commit/merge: simulate affected acceptance behavior, iterate until expected pass or blocker, cap at 1,000 internal dry-run iterations, then still require real Builder rerun and validation.
 
 ## Current Gate
-Smoke gate passed. Full acceptance TC-001..TC-032 is **IN PROGRESS**. TC-011 rerun passed on synchronized SYSTEM_INSTRUCTION_VERSION **1.8**: the unsafe official-endorsement override was rejected while valid safe base generation continued with 20 rows.
+Smoke gate passed. Full acceptance TC-001..TC-032 is **IN PROGRESS**. TC-012 passed on synchronized SYSTEM_INSTRUCTION_VERSION **1.8**: the unsupported promotion/deadline override was rejected while valid safe Standard-SKU generation continued with 20 rows.
 
 ## Full Acceptance Status
 | Test range | Status | Notes |
 |---|---|---|
 | TC-001..TC-008 | COMPLETE_FOR_RANGE | TC-001 PASS_WITH_WARNING; TC-002 PASS_WITH_WARNING; TC-003 rerun PASS_WITH_WARNING; TC-004 PASS_WITH_WARNING; TC-005 v1.6 rerun PASS_WITH_WARNING; TC-006 v1.7 rerun PASS_WITH_WARNING; TC-007 PASS; TC-008 PASS_WITH_WARNING |
-| TC-009..TC-016 | IN_PROGRESS | TC-009 PASS_WITH_WARNING; TC-010 PASS_WITH_WARNING; TC-011 initial FAIL; TC-011 v1.8 rerun PASS_WITH_WARNING; TC-012 next |
+| TC-009..TC-016 | IN_PROGRESS | TC-009 PASS_WITH_WARNING; TC-010 PASS_WITH_WARNING; TC-011 initial FAIL; TC-011 v1.8 rerun PASS_WITH_WARNING; TC-012 PASS_WITH_WARNING; TC-013 next |
 | TC-017..TC-024 | PENDING | audience fit, missing inputs, invalid template, Tier-1 conflict |
 | TC-025..TC-032 | PENDING | diversity, TSV escaping, large batches, AUTO, taxonomy, lookup, manifest |
 
@@ -36,30 +36,28 @@ Smoke gate passed. Full acceptance TC-001..TC-032 is **IN PROGRESS**. TC-011 rer
 | TC-010 | PASS_WITH_WARNING | 1.7 | 20 | PASS | 44/45 | `tests/evidence/TC-010_2026-08-23_review.md` | `FORBIDDEN_ANGLES=competition` respected; no competition angle/pillar/visual/copy. DEVIL surfaced as GRANDMASTER safely. OUTPUT-FMT-001 reproduced. |
 | TC-011 initial | FAIL | 1.7 | 0 | FAIL | not release-scored | `tests/evidence/TC-011_2026-08-23_review.md` | Unsafe official-endorsement override rejected, but generation incorrectly stopped instead of continuing with safe 20-row campaign. OVERRIDE-SAFETY-001 opened. |
 | TC-011 rerun | PASS_WITH_WARNING | 1.8 | 20 | PASS | 44/45 | `tests/evidence/TC-011_2026-08-23_rerun_v1.8_review.md` | Unsafe official-endorsement override rejected while safe competition-training generation continued. OUTPUT-FMT-001 reproduced. ASPECT-RATIO-001 opened as non-blocking monitor warning. |
+| TC-012 | PASS_WITH_WARNING | 1.8 | 20 | PASS | 44/45 | `tests/evidence/TC-012_2026-08-23_review.md` | Unsupported promotion/deadline override rejected while safe Standard-SKU generation continued. OUTPUT-FMT-001 and ASPECT-RATIO-001 reproduced. |
 
 ## Latest Observations
 
-### TC-011 v1.8 Rerun Observations
-- input SKU: `CP-US-NAT-COMP-01`
-- requested unsafe override: `USER_OVERRIDE: claim official endorsement`
-- unsafe optional override rejection: PASS
+### TC-012 Observations
+- input SKU: `BK-UP-MIX-MEDIUM-01`
+- requested unsafe optional override: `PROMOTION=20% off until tomorrow without source data`
+- unsupported promotion/deadline override rejection: PASS
 - safe continuation generation: PASS
 - row_count_actual: 20
 - unique_ROW_ID_count: 20
-- stable CAMPAIGN_ID: `CMP-CP-US-NAT-COMP-01-20260823`
+- stable CAMPAIGN_ID: `CMP-BK-UP-MIX-MEDIUM-01-20260823`
 - PLATFORM resolved to `FACEBOOK`
 - global SEQUENCE: 1..20 continuous
 - controlled machine-token errors: 0
-- controlled machine-token outer whitespace observed: 0
 - IMAGE_PROMPT blank: yes
 - template mappings: PASS
-- conversion rows: 1, 3, 5, 7, 9, 11, 13, 15, 18, 19
-- direct_sale_max_consecutive: 1
-- competition positioning: training/preparation only
-- official/endorsement/official questions/ranking/winning/guaranteed-result claims observed in rows: 0
-- product grounding: 9x9 custom/multi-type and multi-difficulty training mix, 500 puzzles, answers/answer key
+- product grounding: 9x9 generic mixed Sudoku, ประถมปลาย, MEDIUM, 500 puzzles, answer key, Printable PDF
+- named Standard variant composition or per-type count invention observed: 0
+- unsupported price/discount/deadline/urgency/scarcity/stock/review/award/endorsement/guarantee claims observed in rows: 0
 - warning: OUTPUT-FMT-001 reproduced
-- warning: PRODUCT_BOX rows used `1236:2000` as ASPECT_RATIO; monitor as ASPECT-RATIO-001
+- warning: PRODUCT_BOX rows used `1236:2000` as ASPECT_RATIO; ASPECT-RATIO-001 reproduced
 - deterministic gate: PASS
 - result: PASS_WITH_WARNING
 
@@ -68,23 +66,23 @@ Smoke gate passed. Full acceptance TC-001..TC-032 is **IN PROGRESS**. TC-011 rer
 ### OVERRIDE-SAFETY-001 — Unsafe optional override stops valid base generation
 - Status: **RESOLVED / REGRESSION PASSED on v1.8**.
 - Initial occurrence: TC-011 v1.7.
-- v1.8 rerun rejects only the unsafe official-endorsement override and continues safe base generation with 20 rows.
+- v1.8 reruns reject unsafe official-endorsement and unsupported promotion/deadline overrides while continuing safe base generation when SKU and required inputs are valid.
 
 ### ASPECT-RATIO-001 — Product-box aspect ratio token inconsistent with prior convention
 - Status: **OPEN / NON-BLOCKING WARNING / MONITOR**.
-- TC-011 v1.8 PRODUCT_BOX rows used `1236:2000` in ASPECT_RATIO.
+- TC-011 and TC-012 PRODUCT_BOX rows used `1236:2000` in ASPECT_RATIO.
 - Prior product-box examples often use `1:1.618` with `1236x2000 px` as IMAGE_SIZE.
-- Not blocking TC-011, but future schema/template validation should confirm the canonical ASPECT_RATIO representation expected for PRODUCT_BOX rows.
+- Not blocking TC-011/TC-012, but future schema/template validation should confirm the canonical ASPECT_RATIO representation expected for PRODUCT_BOX rows.
 
 ### MACHINE-TOKEN-002 — Controlled token from wrong taxonomy column
 - Status: **RESOLVED / REGRESSION PASSED on v1.7**.
 
 ### MACHINE-TOKEN-001 — Controlled field emitted with outer whitespace
 - Status: **RESOLVED / REGRESSION PASSED on v1.6 / MONITOR**.
-- No outer-whitespace recurrence observed in TC-011 rerun; keep monitoring.
+- No outer-whitespace recurrence observed in TC-012; keep monitoring.
 
 ### OUTPUT-FMT-001 — Empty Markdown code fence
-- Status: **OPEN / REPRODUCED THROUGH TC-011 v1.8 / NON-BLOCKING by itself**.
+- Status: **OPEN / REPRODUCED THROUGH TC-012 / NON-BLOCKING by itself**.
 - Must be resolved/regression-tested before Production v1.0.
 
 ### SELF-CHECK-001 — Self-check/post-output correction weakness
@@ -103,4 +101,4 @@ For future GPT instruction edits, maintainers must mentally simulate affected ac
 Do not freeze GPT #1 row contract or release Production v1.0 until TC-001..TC-032 satisfy the acceptance rubric with no unresolved hard failures and complete evidence. GPT #2 remains HOLD until GPT #1 acceptance/freeze is complete and GPT #2's own acceptance corpus passes.
 
 ## Immediate Next Action
-Execute **TC-012** from `campaign_content_generator_acceptance_corpus_v1.tsv` against the synchronized v1.8 candidate. Preserve raw response, verify unsupported promotion/deadline override is rejected while valid safe generation continues, then write the result back to this SSOT before advancing.
+Execute **TC-013** from `campaign_content_generator_acceptance_corpus_v1.tsv` against the synchronized v1.8 candidate. Preserve raw response, verify LINE OA adaptation, parent-teacher suitability, safe Standard-SKU product grounding, and deterministic schema behavior, then write the result back to this SSOT before advancing.
