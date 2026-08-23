@@ -9,8 +9,7 @@ Usage:
     --taxonomy schemas/controlled_vocabulary_v1.tsv \
     --template-registry templates/prompt_template_registry_v1.tsv
 
-This validator checks machine-verifiable hard gates only. Semantic/marketing review
-remains a separate human/model gate.
+Checks machine-verifiable hard gates only. Semantic/marketing review remains separate.
 """
 
 from __future__ import annotations
@@ -30,7 +29,10 @@ EXPECTED_COLUMNS = [
     "IMAGE_SIZE", "PROMPT_TEMPLATE_ID", "IMAGE_PROMPT",
 ]
 
-CONTROLLED_FIELDS = {"FUNNEL_STAGE", "CAMPAIGN_ROLE", "VISUAL_TYPE", "PLATFORM"}
+CONTROLLED_FIELDS = {
+    "FUNNEL_STAGE", "CAMPAIGN_ROLE", "VISUAL_TYPE", "PLATFORM",
+    "OBJECTIVE", "CONTENT_PILLAR",
+}
 
 
 def load_tsv(path: Path):
@@ -55,6 +57,11 @@ def load_template_registry(path: Path):
 
 def load_valid_skus(path: Path):
     return {row["SKU"] for row in load_tsv(path) if row.get("SKU")}
+
+
+def angle_family(value: str) -> str:
+    """Return canonical marketing-angle family from `FAMILY: detail` serialization."""
+    return (value or "").split(":", 1)[0].strip()
 
 
 def fail(errors, msg):
@@ -113,6 +120,12 @@ def validate(args):
             if field in allowed and row.get(field) not in allowed[field]:
                 fail(errors, f"row {i}: {field}={row.get(field)!r} is outside canonical taxonomy")
 
+        family = angle_family(row.get("MARKETING_ANGLE", ""))
+        if not family:
+            fail(errors, f"row {i}: MARKETING_ANGLE family is blank")
+        elif family not in allowed.get("MARKETING_ANGLE_FAMILY", set()):
+            fail(errors, f"row {i}: MARKETING_ANGLE family {family!r} is outside canonical taxonomy")
+
     registry = load_template_registry(args.template_registry)
     for i, row in enumerate(rows, start=1):
         template_id = row.get("PROMPT_TEMPLATE_ID", "")
@@ -141,11 +154,11 @@ def validate(args):
             fail(errors, f"VISUAL_TYPE concentration {top_value}={ratio:.1%} exceeds 25%")
 
     if not args.allow_angle_concentration and len(rows) >= 10:
-        counts = Counter(r.get("MARKETING_ANGLE") for r in rows)
+        counts = Counter(angle_family(r.get("MARKETING_ANGLE", "")) for r in rows)
         top_value, top_count = counts.most_common(1)[0]
         ratio = top_count / len(rows)
         if ratio > 0.20:
-            fail(errors, f"MARKETING_ANGLE concentration {top_value!r}={ratio:.1%} exceeds 20%")
+            fail(errors, f"MARKETING_ANGLE family concentration {top_value!r}={ratio:.1%} exceeds 20%")
 
     return errors, warnings
 
