@@ -8,14 +8,14 @@ GitHub project documents are the operational SSOT. Chat, model memory, temporary
 Instruction changes must include internal dry-run simulation before commit/merge: simulate affected acceptance behavior, iterate until expected pass or blocker, cap at 1,000 internal iterations, then still require real Builder rerun and validation.
 
 ## Current Gate
-Smoke gate passed. Full acceptance TC-001..TC-032 is **IN_PROGRESS**. TC-016 passed on synchronized SYSTEM_INSTRUCTION_VERSION **1.9**: the `VISUAL_MIX: 100% Product Hero` override was accepted safely, all 5 rows used `PRODUCT_HERO` with `IMG-PRODUCT-HERO-V1`, and deterministic schema/template behavior passed. TC-009..TC-016 is now **COMPLETE_FOR_RANGE**. Continue to **TC-017**.
+Smoke gate passed. Full acceptance TC-001..TC-032 is **IN_PROGRESS**. TC-017 passed on synchronized SYSTEM_INSTRUCTION_VERSION **1.9**: upper-secondary EASY positioning was handled as beginner/restart/foundation-building rather than advanced-only or competition-only, safe 9x9 Standard-SKU grounding passed, and deterministic schema/template behavior passed. Continue to **TC-018**.
 
 ## Full Acceptance Status
 | Test range | Status | Notes |
 |---|---|---|
 | TC-001..TC-008 | COMPLETE_FOR_RANGE | TC-001 PASS_WITH_WARNING; TC-002 PASS_WITH_WARNING; TC-003 rerun PASS_WITH_WARNING; TC-004 PASS_WITH_WARNING; TC-005 v1.6 rerun PASS_WITH_WARNING; TC-006 v1.7 rerun PASS_WITH_WARNING; TC-007 PASS; TC-008 PASS_WITH_WARNING |
 | TC-009..TC-016 | COMPLETE_FOR_RANGE | TC-009 PASS_WITH_WARNING; TC-010 PASS_WITH_WARNING; TC-011 initial FAIL; TC-011 v1.8 rerun PASS_WITH_WARNING; TC-012 PASS_WITH_WARNING; TC-013 initial FAIL; TC-013 v1.9 rerun PASS_WITH_WARNING; TC-014 PASS_WITH_WARNING; TC-015 PASS_WITH_WARNING; TC-016 PASS_WITH_WARNING |
-| TC-017..TC-024 | PENDING | audience fit, missing inputs, invalid template, Tier-1 conflict; TC-017 next |
+| TC-017..TC-024 | IN_PROGRESS | TC-017 PASS_WITH_WARNING; TC-018 next; remaining audience fit, missing inputs, invalid template, Tier-1 conflict pending |
 | TC-025..TC-032 | PENDING | diversity, TSV escaping, large batches, AUTO, taxonomy, lookup, manifest |
 
 ## Per-Test Evidence Record
@@ -42,33 +42,31 @@ Smoke gate passed. Full acceptance TC-001..TC-032 is **IN_PROGRESS**. TC-016 pas
 | TC-014 | PASS_WITH_WARNING | 1.9 | 30 | PASS | 44/45 | `tests/evidence/TC-014_2026-08-24_review.md` | Marketplace adaptation and structured product listing / consideration-conversion behavior passed. Safe 9x9 Standard-SKU grounding passed. OUTPUT-FMT-001 and ASPECT-RATIO-001 reproduced. |
 | TC-015 | PASS_WITH_WARNING | 1.9 | 30 | PASS | 44/45 | `tests/evidence/TC-015_2026-08-24_review.md` | FORMULA mode passed: all IMAGE_PROMPT fields blank, schema not expanded, and visual/template mappings valid. OUTPUT-FMT-001 reproduced. |
 | TC-016 | PASS_WITH_WARNING | 1.9 | 5 | PASS | 44/45 | `tests/evidence/TC-016_2026-08-24_review.md` | `VISUAL_MIX: 100% Product Hero` accepted as a safe creative override; all rows use PRODUCT_HERO and IMG-PRODUCT-HERO-V1. OUTPUT-FMT-001 reproduced. |
+| TC-017 | PASS_WITH_WARNING | 1.9 | 20 | PASS | 44/45 | `tests/evidence/TC-017_2026-08-24_review.md` | Upper-secondary EASY positioning passed: not advanced-only or competition-only; safe 9x9 Standard-SKU grounding passed. OUTPUT-FMT-001 reproduced. |
 
 ## Latest Observations
 
-### TC-016 Observations
-- input SKU: `BK-UP-MIX-EXPERT-01`
-- requested platform: `Facebook`
-- requested `VISUAL_MIX: 100% Product Hero`
+### TC-017 Observations
+- input SKU: `BK-US-MIX-EASY-01`
+- requested platform: `AUTO`
 - SYSTEM_INSTRUCTION_VERSION: `1.9`
-- row_count_actual: 5
-- unique_ROW_ID_count: 5
-- stable CAMPAIGN_ID: `CMP-BK-UP-MIX-EXPERT-01-FACEBOOK-20260824`
+- row_count_actual: 20
+- unique_ROW_ID_count: 20
+- stable CAMPAIGN_ID: `CMP-BK-US-MIX-EASY-01-FACEBOOK-20260824`
 - PLATFORM resolved to `FACEBOOK`
-- global SEQUENCE: 1..5 continuous
+- global SEQUENCE: 1..20 continuous
 - every emitted row has exactly 27 tab-delimited fields
 - controlled machine-token errors: 0
 - controlled machine-token outer whitespace observed: 0
-- visual override handling: PASS
-- VISUAL_TYPE: `PRODUCT_HERO` in all 5 rows
-- PROMPT_TEMPLATE_ID: `IMG-PRODUCT-HERO-V1` in all 5 rows
-- IMAGE_PROMPT blank: yes, all 5 rows
-- schema expansion observed: 0
+- IMAGE_PROMPT blank: yes, all 20 rows
 - template mappings: PASS
-- product grounding: 9x9 generic mixed Sudoku, ประถมปลาย, EXPERT, 500 puzzles, answer key, Printable PDF
+- direct_sale_max_consecutive: 2
+- product grounding: upper-secondary Standard SKU, EASY, 9x9 generic mixed Sudoku, 500 puzzles, answer key, Printable PDF
 - named Standard variant composition or per-type count invention observed: 0
+- audience/difficulty fit: PASS; EASY is positioned as a starting point, confidence-building level, and return-to-basics routine for upper-secondary learners/adults
+- advanced-only or competition-only positioning observed: 0
 - unsupported price/discount/deadline/scarcity/stock/review/award/endorsement/guarantee claims observed: 0
 - warning: OUTPUT-FMT-001 reproduced
-- visual concentration warning: not applicable because the visual concentration was explicitly requested and allowed by TC-016
 - deterministic/structural gate: PASS
 - result: PASS_WITH_WARNING
 
@@ -77,7 +75,7 @@ Smoke gate passed. Full acceptance TC-001..TC-032 is **IN_PROGRESS**. TC-016 pas
 ### MACHINE-TOKEN-001 — Controlled field emitted with outer whitespace
 - Status: **RESOLVED / REGRESSION PASSED on v1.9 / MONITOR**.
 - Earlier recurrence: TC-013 v1.8 row 8 `OBJECTIVE= CREATE_ENGAGEMENT`; row 11 `CAMPAIGN_ROLE= AWARENESS`.
-- v1.9 reruns: no leading/trailing whitespace observed in controlled machine-token fields through TC-016.
+- v1.9 reruns: no leading/trailing whitespace observed in controlled machine-token fields through TC-017.
 
 ### OVERRIDE-SAFETY-001 — Unsafe optional override stops valid base generation
 - Status: **RESOLVED / REGRESSION PASSED on v1.8**.
@@ -85,13 +83,13 @@ Smoke gate passed. Full acceptance TC-001..TC-032 is **IN_PROGRESS**. TC-016 pas
 ### ASPECT-RATIO-001 — Product-box aspect ratio token inconsistent with prior convention
 - Status: **OPEN / NON-BLOCKING WARNING / MONITOR**.
 - TC-011, TC-012, TC-013 initial, TC-013 v1.9 rerun, and TC-014 PRODUCT_BOX rows used `1236:2000` in ASPECT_RATIO.
-- TC-015 and TC-016 did not newly reproduce this warning because Facebook portrait rows used `4:5` and `1080x1350 px`.
+- TC-015, TC-016, and TC-017 did not newly reproduce this warning because Facebook portrait rows used `4:5` and `1080x1350 px`.
 
 ### MACHINE-TOKEN-002 — Controlled token from wrong taxonomy column
 - Status: **RESOLVED / REGRESSION PASSED on v1.7**.
 
 ### OUTPUT-FMT-001 — Empty Markdown code fence
-- Status: **OPEN / REPRODUCED THROUGH TC-016 / NON-BLOCKING by itself**.
+- Status: **OPEN / REPRODUCED THROUGH TC-017 / NON-BLOCKING by itself**.
 - Must be resolved/regression-tested before Production v1.0.
 
 ### SELF-CHECK-001 — Self-check/post-output correction weakness
@@ -110,4 +108,4 @@ For future GPT instruction edits, maintainers must mentally simulate affected ac
 Do not freeze GPT #1 row contract or release Production v1.0 until TC-001..TC-032 satisfy the acceptance rubric with no unresolved hard failures and complete evidence. GPT #2 remains HOLD until GPT #1 acceptance/freeze is complete and GPT #2's own acceptance corpus passes.
 
 ## Immediate Next Action
-Execute **TC-017** from `campaign_content_generator_acceptance_corpus_v1.tsv` against the synchronized v1.9 candidate. Preserve raw response, verify the upper-secondary EASY campaign is not positioned only for advanced/competition audiences, and write the result back to this SSOT before advancing.
+Execute **TC-018** from `campaign_content_generator_acceptance_corpus_v1.tsv` against the synchronized v1.9 candidate. Preserve raw response, verify elementary EXPERT positioning is not presented as beginner-level, and write the result back to this SSOT before advancing.
