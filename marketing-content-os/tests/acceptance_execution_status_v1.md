@@ -1,9 +1,11 @@
 # Campaign Content Generator v1.0-rc1 — Acceptance Execution Status
 
 ## Governance
-This execution record is governed by `marketing-content-os/docs/00_DOCUMENT_DRIVEN_SSOT_GOVERNANCE.md`.
+This execution record is governed by `marketing-content-os/docs/00_DOCUMENT_DRIVEN_SSOT_GOVERNANCE.md` and `marketing-content-os/docs/02_INSTRUCTION_AUTHORING_DRY_RUN_POLICY.md`.
 
 GitHub project documents are the operational SSOT. Chat, model memory, temporary notes, and unsynchronized GPT Builder settings are not authoritative by themselves. Every material acceptance result, blocker, mitigation, version change, and release decision must be recorded in the repository.
+
+Instruction changes must now include internal dry-run simulation before commit/merge: simulate affected acceptance behavior, iterate until expected pass or blocker, cap at 1,000 internal dry-run iterations, then still require real Builder rerun and validation.
 
 ## Current Gate
 Smoke gate passed. Full acceptance TC-001..TC-032 is **BLOCKED AT TC-006**. TC-006 on SYSTEM_INSTRUCTION_VERSION 1.6 reproduced a blocking controlled-token error where a CONTENT_PILLAR token was emitted in the OBJECTIVE column. SYSTEM_INSTRUCTION_VERSION 1.7 is implemented and requires live Builder synchronization plus TC-006 regression rerun.
@@ -52,6 +54,7 @@ Smoke gate passed. Full acceptance TC-001..TC-032 is **BLOCKED AT TC-006**. TC-0
 - Initial occurrence: TC-006 v1.6 row 31 `OBJECTIVE=PARENT_TEACHER_INSIGHT`.
 - `PARENT_TEACHER_INSIGHT` is valid only as CONTENT_PILLAR; it is not valid as OBJECTIVE.
 - v1.7 mitigation: instructions now require column-specific token-set validation and explicitly forbid using a token from another controlled column.
+- Instruction-authoring dry-run policy added after this failure: future instruction changes must include internal dry-run simulation against affected gates, capped at 1,000 iterations, before commit/merge.
 - Closure rule: TC-006 rerun on synchronized v1.7 must pass deterministic validation.
 
 ### MACHINE-TOKEN-001 — Controlled field emitted with outer whitespace
@@ -73,6 +76,9 @@ Smoke gate passed. Full acceptance TC-001..TC-032 is **BLOCKED AT TC-006**. TC-0
 
 ## Instruction Change Triggered by TC-006
 SYSTEM_INSTRUCTION_VERSION advanced from 1.6 to **1.7**. The change preserves the ultra-compact Builder-ready format and adds explicit column-specific controlled-token validation. Row schema, taxonomy, product truth, and prompt-template versions remain unchanged.
+
+## Instruction Authoring Dry-Run Policy
+For future GPT instruction edits, maintainers must mentally simulate affected acceptance behavior before committing. The dry-run loop must focus on actual emitted rows and deterministic gates, not only wording. Iterate until expected pass or blocker; do not exceed 1,000 internal iterations. This simulation is only preflight and does not replace the required live GPT Builder rerun, deterministic validation, and semantic/human review.
 
 ## Release Rule
 Do not freeze GPT #1 row contract or release Production v1.0 until TC-001..TC-032 satisfy the acceptance rubric with no unresolved hard failures and complete evidence. GPT #2 remains HOLD until GPT #1 acceptance/freeze is complete and GPT #2's own acceptance corpus passes.
