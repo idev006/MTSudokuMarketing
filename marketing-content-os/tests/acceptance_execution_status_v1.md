@@ -34,7 +34,7 @@ Mitigation in SYSTEM_INSTRUCTION_VERSION 1.2:
 ## Full Acceptance Status
 | Test range | Status | Notes |
 |---|---|---|
-| TC-001..TC-008 | IN_PROGRESS | TC-001 completed PASS_WITH_WARNING; TC-002 next |
+| TC-001..TC-008 | IN_PROGRESS | TC-001 and TC-002 completed PASS_WITH_WARNING; TC-003 next |
 | TC-009..TC-016 | PENDING | Advanced overrides, safety, Formula, visual override |
 | TC-017..TC-024 | PENDING | audience fit, missing inputs, invalid template, Tier-1 conflict |
 | TC-025..TC-032 | PENDING | diversity, TSV escaping, large batches, AUTO, taxonomy, lookup, manifest |
@@ -53,7 +53,8 @@ For each GPT answer:
 ## Per-Test Evidence Record
 | TEST_ID | RESULT | GPT/Instruction Version | Row Count | Deterministic Validator | Semantic Score | Evidence | Notes |
 |---|---|---|---:|---|---:|---|---|
-| TC-001 | PASS_WITH_WARNING | 1.2 | 1 | PASS | 43/45 | `tests/evidence/TC-001_2026-08-23_raw.md` | Hard gates pass. Correct approved SKU, FACEBOOK AUTO resolution, canonical taxonomy, EASY/EL audience fit, 6x6 generic mixed-Sudoku grounding, 500 puzzles + answer key truth, approved STUDENT_ACTIVITY→IMG-STUDENT-ACTIVITY-V1 mapping, and blank IMAGE_PROMPT. OUTPUT-FMT-001 recurred: an empty Markdown code fence still appeared before the TSV block despite v1.2 rendering mitigation. Non-blocking for TC-001 but remains an open regression item. |
+| TC-001 | PASS_WITH_WARNING | 1.2 | 1 | PASS | 43/45 | `tests/evidence/TC-001_2026-08-23_raw.md` | Hard gates pass. Correct approved SKU, FACEBOOK AUTO resolution, canonical taxonomy, EASY/EL audience fit, 6x6 generic mixed-Sudoku grounding, 500 puzzles + answer key truth, approved STUDENT_ACTIVITY→IMG-STUDENT-ACTIVITY-V1 mapping, and blank IMAGE_PROMPT. OUTPUT-FMT-001 recurred. |
+| TC-002 | PASS_WITH_WARNING | 1.2 | 5 | PASS | 44/45 | `tests/evidence/TC-002_2026-08-23_raw.md` | Exact 5 rows; one stable CAMPAIGN_ID; SEQUENCE 1..5; unique ROW_ID; canonical FACEBOOK/taxonomy; five valid visual→template mappings; blank IMAGE_PROMPT; coherent awareness→education→problem/solution→product-benefit→conversion mini-campaign; 9x9 generic mixed-Sudoku grounding; 500 puzzles, answer key and Printable PDF claims supported. OUTPUT-FMT-001 reproduced again. Deterministic structural validation was executed against the supplied TSV: all 6 physical lines (header + 5 records) had exactly 27 fields, controlled values/template mappings were valid, sequence and IDs passed. |
 
 ### TC-001 Diagnostic Score
 - Product Truth Accuracy: 5/5
@@ -67,17 +68,30 @@ For each GPT answer:
 - Human Usability: 4/5 (empty-code-fence presentation defect)
 - Total: 43/45; average 4.78/5
 
+### TC-002 Diagnostic Score
+- Product Truth Accuracy: 5/5
+- Audience/Difficulty Fit: 5/5
+- Campaign Coherence: 5/5
+- Copy Quality: 5/5
+- Diversity: 5/5
+- Visual Direction Quality: 5/5
+- Claim Safety: 5/5
+- Schema/Determinism: 5/5
+- Human Usability: 4/5 (empty-code-fence presentation defect)
+- Total: 44/45; average 4.89/5
+
 ## Open Acceptance Defects
 ### OUTPUT-FMT-001 — Empty Markdown code fence
-- Status: OPEN / NON-BLOCKING for current semantic tests.
-- Seen in smoke runs and reproduced in TC-001 after SYSTEM_INSTRUCTION_VERSION 1.2.
-- Impact: human presentation clutter and potential parser friction; logical TSV remains extractable and the 27-field record is valid.
+- Status: OPEN / REPRODUCED IN TC-001 AND TC-002 / NON-BLOCKING for semantic tests.
+- Seen in smoke runs and reproduced after SYSTEM_INSTRUCTION_VERSION 1.2.
+- Impact: human presentation clutter and potential parser friction; logical TSV remains extractable and the 27-field records remain valid.
 - Rule: do not mark this defect resolved until a later regression run demonstrates no empty fence using the live synchronized candidate.
+- Escalation: if still present at release-candidate close, fix/retest before Production v1.0 because the documented rendering rule is currently not being obeyed.
 
 ### SELF-CHECK-001 — Unverified batch-summary statistic
 - Status: MITIGATED / REGRESSION PENDING.
-- No occurrence in TC-001 because N=1 has no batch-statistics summary requirement.
-- Recheck on a later N>=20 acceptance case using deterministic batch audit metrics.
+- No meaningful batch-statistic claim in TC-001/TC-002 requiring recheck.
+- Recheck on TC-003 or another N>=20 acceptance case using deterministic batch audit metrics.
 
 ## Release Rule
 Do not freeze the GPT #1 row contract or release Production v1.0 until TC-001..TC-032 satisfy the acceptance rubric with no hard failures and the documented evidence is complete.
@@ -85,4 +99,4 @@ Do not freeze the GPT #1 row contract or release Production v1.0 until TC-001..T
 GPT #2 remains HOLD until this gate is complete. Its handoff contract may be prepared/documented, but it must not be promoted to production before GPT #1 acceptance/freeze and GPT #2's own acceptance corpus pass.
 
 ## Immediate Next Action
-Execute **TC-002** from `campaign_content_generator_acceptance_corpus_v1.tsv` against the same synchronized GPT #1 candidate, preserve the raw response, validate it, score it, and write the result back to this SSOT record before advancing to TC-003.
+Execute **TC-003** from `campaign_content_generator_acceptance_corpus_v1.tsv` against the same synchronized GPT #1 candidate. TC-003 is the first N=20 acceptance case, so preserve the raw response, validate exact row count/sequence/schema, run batch audit metrics, explicitly regression-check SELF-CHECK-001 and OUTPUT-FMT-001, then write the result back to this SSOT record before advancing to TC-004.
