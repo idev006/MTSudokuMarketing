@@ -1,0 +1,55 @@
+[TEMPLATE_ID: IMG-LIFESTYLE-V1]
+
+Create a premium commercial social-media advertising image
+for the educational publishing brand "{{BRAND_NAME}}".
+
+PRODUCT
+Brand: {{BRAND_NAME}}
+SKU: {{SKU}}
+Product: {{PRODUCT_NAME}}
+Grade band: {{GRADE_BAND}}
+Difficulty: {{DIFFICULTY}}
+
+MARKETING OBJECTIVE
+Platform: {{PLATFORM}}
+Campaign objective: {{OBJECTIVE}}
+Target audience: {{AUDIENCE}}
+Marketing angle: {{MARKETING_ANGLE}}
+
+VISUAL CONCEPT
+Visual type: {{VISUAL_TYPE}}
+Main subject: {{VISUAL_SUBJECT}}
+Scene: {{VISUAL_SCENE}}
+Emotion: {{VISUAL_EMOTION}}
+
+PRODUCT PRESENTATION
+Product placement: {{PRODUCT_PLACEMENT}}
+Show the BiiigBee Easy Maths workbook naturally and professionally.
+Maintain accurate product identity and age appropriateness.
+
+COMPOSITION
+Text-safe area: {{TEXT_SAFE_ZONE}}
+Leave clean negative space for later text overlay.
+Do not render Thai headline text inside the generated image.
+
+TEXT OVERLAY INTENT
+Text to be added later:
+"{{TEXT_OVERLAY}}"
+
+STYLE
+Premium educational publishing advertising,
+modern, trustworthy, friendly, polished,
+commercial-quality visual suitable for parents, teachers, and students.
+
+TECHNICAL OUTPUT
+Platform: {{PLATFORM}}
+Aspect ratio: {{ASPECT_RATIO}}
+Target size: {{IMAGE_SIZE}}
+
+NEGATIVE REQUIREMENTS
+No watermark.
+No random text.
+No gibberish Thai text.
+No fake official logos.
+No distorted Sudoku grids.
+No misleading physical-product packaging claims.
