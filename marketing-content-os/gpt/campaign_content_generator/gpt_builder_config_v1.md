@@ -13,14 +13,18 @@
 - Social media admin
 - Campaign planner
 
-## Instructions
+## Instructions — Builder-safe compact version
 Paste the complete contents of:
 `marketing-content-os/gpt/campaign_content_generator/system_instructions_v1.md`
 
-This is the canonical instruction text. Do not summarize it and do not duplicate SKU-specific facts inside Instructions.
+This compact file is the **canonical runtime Instructions** for GPT Builder and is intentionally kept below the 8,000-character limit. Current authored length: **5,735 characters**. Re-check the length after every material edit.
+
+Do NOT paste `system_instructions_full_reference_v1.md` into GPT Builder. That file is maintainer/reference documentation only.
+
+Do not summarize the compact canonical instructions and do not duplicate SKU-specific facts inside Instructions.
 
 ## Exact rc1 Knowledge Upload Bundle — 16 files
-Keep the deployment bundle intentionally below the Custom GPT knowledge-file limit. Behavioral rules already encoded in System Instructions must not be uploaded again merely as duplicate reference files.
+Keep the deployment bundle intentionally below the Custom GPT knowledge-file limit. Reference data belongs in Knowledge; runtime behavior belongs in the compact Instructions.
 
 ### Product / Marketing Truth — 8 files
 1. `marketing-plan/sku/sku_source_of_truth.md`
@@ -43,7 +47,7 @@ Keep the deployment bundle intentionally below the Custom GPT knowledge-file lim
 16. `marketing-content-os/knowledge_manifest_v1.yaml`
 
 ## Files NOT Uploaded as rc1 Knowledge
-The following remain governance/developer documentation in GitHub but are not part of the GPT Builder knowledge upload bundle because their runtime behavior is already encoded in the canonical System Instructions:
+These remain governance/developer documentation because their essential runtime rules are already encoded in compact Instructions:
 - `docs/12_input_output_contract.md`
 - `docs/13_system_instruction_quality_gates.md`
 - `docs/14_shared_marketing_brain_contract.md`
@@ -52,46 +56,41 @@ The following remain governance/developer documentation in GitHub but are not pa
 - `docs/19_tsv_serialization_contract.md`
 - `docs/20_large_batch_protocol.md`
 - `docs/21_deterministic_validator_spec.md`
+- `gpt/campaign_content_generator/system_instructions_full_reference_v1.md`
 - acceptance test/rubric files
 - validator source code
 
-Do not upload `sku_lookup_schema.tsv`; it documents the shape only. Use populated `sku_lookup_v1.tsv`.
+Do not upload `sku_lookup_schema.tsv`; use populated `sku_lookup_v1.tsv`.
 
 ## Conversation Starters
 Use the four starters in `conversation_starters_v1.md`.
 
-## Capabilities Required for rc1
-- Knowledge/file retrieval from uploaded approved files
+## Capabilities for rc1 Acceptance
+Required:
+- Knowledge/file retrieval
 - Structured text generation
 - TSV-compatible output
 
-## Capabilities Disabled / Not Required for rc1 Acceptance
+Disabled / not required:
 - Web browsing
 - Image generation
 - external Actions/API integrations
-- scheduling/publishing tools
+- publishing/scheduling tools
 
-Keep external variability low until core acceptance passes.
-
-## Default Operating Mode
-`GENERAL`
-
-## Platform AUTO Rule
-Resolve to one primary canonical platform for a campaign. Multi-platform generation is an Advanced Mode capability using `PLATFORM_MIX`.
-
-## IMAGE_PROMPT_MODE v1
-`FORMULA` only.
-
-`PRECOMPILED` and `BOTH` are future-version options and must not be exposed as active rc1 modes.
+## Locked Defaults
+- Default mode: `GENERAL`
+- `PLATFORM=AUTO` resolves to one canonical primary platform
+- multi-platform requires Advanced Mode `PLATFORM_MIX`
+- `IMAGE_PROMPT_MODE=FORMULA` only
+- N>20 uses max-20-row chunks with global sequence
 
 ## Default Output
 Metadata header plus:
-1. CONTENT ROWS (TSV; chunked at max 20 rows per part when N>20)
+1. CONTENT ROWS (TSV)
 2. USED IMAGE PROMPT TEMPLATES
 3. PROMPT ASSEMBLY GUIDANCE
 
 ## Production Status
-Initial GPT build status:
 **Candidate / Acceptance Testing Required**
 
 Do not label Production v1.0 until independent deterministic validation and semantic acceptance tests pass all hard gates.
