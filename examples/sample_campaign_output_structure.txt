@@ -1,0 +1,33 @@
+# BIIIGBEE SOCIAL CAMPAIGN OUTPUT
+VERSION: 0.1
+
+====================================
+SECTION 1 — CONTENT ROWS
+====================================
+
+ROW_ID	SKU	CAMPAIGN_ID	SEQUENCE	PLATFORM	...	PROMPT_TEMPLATE_ID	IMAGE_PROMPT
+POST-001	BK-UP-MIX-MEDIUM-01	AUG-UP-MEDIUM-01	1	Facebook	...	IMG-LIFESTYLE-V1	
+POST-002	BK-UP-MIX-MEDIUM-01	AUG-UP-MEDIUM-01	2	Facebook	...	IMG-PRODUCT-HERO-V1	
+
+====================================
+SECTION 2 — IMAGE PROMPT TEMPLATES
+====================================
+
+[TEMPLATE: IMG-LIFESTYLE-V1]
+...
+{{SKU}}
+{{AUDIENCE}}
+{{VISUAL_SUBJECT}}
+...
+
+====================================
+SECTION 3 — PROMPT ASSEMBLY
+====================================
+
+PLACEHOLDER_MAPPING:
+{{SKU}} => SKU
+{{AUDIENCE}} => AUDIENCE
+{{VISUAL_SUBJECT}} => VISUAL_SUBJECT
+
+GOOGLE_SHEETS_FORMULA:
+[insert final formula after implementation design]
