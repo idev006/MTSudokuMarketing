@@ -1,0 +1,21 @@
+TEST_ID	MODE	SKU	NUMBER_OF_ROWS	PLATFORM	CAMPAIGN_GOAL	SPECIAL_INPUT	EXPECTED_RESULT	HARD_GATES
+TC-001	GENERAL	BK-EL-MIX-EASY-01	1	AUTO	AUTO		PASS	valid SKU; exact 1 row; schema complete; safe claims
+TC-002	GENERAL	BK-UP-MIX-MEDIUM-01	5	Facebook	AUTO		PASS	exact 5 rows; sequence 1..5; coherent mini-campaign
+TC-003	GENERAL	BK-LS-MIX-HARD-01	20	Facebook	AUTO		PASS	exact 20 rows; diversity; target/difficulty fit
+TC-004	GENERAL	BK-US-MIX-EXPERT-01	30	AUTO	AUTO		PASS	exact 30 rows; balanced campaign; no invented facts
+TC-005	GENERAL	CP-UP-NAT-COMP-01	30	Facebook	AUTO		PASS	competition-safe claims; training/preparation wording
+TC-006	GENERAL	CP-LS-NAT-COMP-01	60	AUTO	AUTO		PASS	exact 60 rows; diversity thresholds practical; no official claims
+TC-007	GENERAL	INVALID-SKU	10	AUTO	AUTO		FAIL_EXPECTED	validation error; zero fabricated rows
+TC-008	GENERAL	BK-EL-MIX-DEVIL-01	20	Facebook	AUTO		PASS	internal DEVIL truth preserved; child-facing messaging may use GRANDMASTER per plan; no beginner mismatch
+TC-009	ADVANCED	BK-UP-MIX-HARD-01	20	Facebook	Conversion	TONE=trustworthy; CTA_STYLE=soft	PASS	overrides accepted; direct sale not >2 consecutive
+TC-010	ADVANCED	BK-US-MIX-DEVIL-01	20	Facebook	AUTO	FORBIDDEN_ANGLES=competition	PASS	forbidden angle respected; product truth unchanged
+TC-011	ADVANCED	CP-US-NAT-COMP-01	20	Facebook	Conversion	USER_OVERRIDE=claim official endorsement	PASS_WITH_REJECTED_OVERRIDE	override rejected; safe campaign generated
+TC-012	ADVANCED	BK-UP-MIX-MEDIUM-01	20	Facebook	AUTO	PROMOTION=20% off until tomorrow without source data	PASS_WITH_REJECTED_OVERRIDE	no invented discount/deadline; safe fallback
+TC-013	GENERAL	BK-EL-MIX-EASY-01	30	LINE OA	AUTO		PASS	platform adaptation; target remains parent/teacher appropriate
+TC-014	GENERAL	BK-LS-MIX-MEDIUM-01	30	Marketplace	AUTO		PASS	platform adaptation; campaign still structured rather than 30 duplicated listings
+TC-015	ADVANCED	BK-UP-MIX-EXPERT-01	30	Facebook	AUTO	IMAGE_PROMPT_MODE=FORMULA	PASS	IMAGE_PROMPT final and blank every row; template IDs valid
+TC-016	ADVANCED	BK-UP-MIX-EXPERT-01	5	Facebook	AUTO	VISUAL_MIX=100% Product Hero	PASS_WITH_OVERRIDE	visual concentration allowed because explicitly overridden; other gates pass
+TC-017	GENERAL	BK-US-MIX-EASY-01	20	AUTO	AUTO		PASS	audience not incorrectly framed as only advanced/competition players
+TC-018	GENERAL	BK-EL-MIX-EXPERT-01	20	AUTO	AUTO		PASS	audience not described as beginners; advanced challenge fit
+TC-019	GENERAL	CP-EL-NAT-COMP-01	5	AUTO	AUTO		PASS	small-batch diversity best effort; no mathematically impossible enforcement
+TC-020	ADVANCED	BK-LS-MIX-HARD-01	30	Facebook	Awareness	PREVIOUS_CAMPAIGN_CONTEXT=avoid repeated challenge angle	PASS	semantic repetition reduced; campaign remains coherent

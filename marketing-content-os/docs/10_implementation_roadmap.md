@@ -12,27 +12,41 @@ Locked:
 - Shared Marketing Brain contract
 - acceptance test plan
 
-## Phase 2 — Build Campaign Content Generator v1.0 — NEXT
+## Phase 2 — Build Campaign Content Generator v1.0 Implementation Package — COMPLETE
 
-Create the GPT configuration for **BiiigBee Campaign Content Generator** using the approved v1 contracts.
+Created:
+- production-ready system instructions
+- GPT Builder configuration spec
+- conversation starters
+- source-of-truth / knowledge mapping
+- General Mode interaction flow
+- Advanced Mode interaction flow
+- blocking/non-blocking input behavior
+- deterministic output behavior
+- v1 acceptance corpus
+- acceptance execution rubric
 
-Required components:
-- system instructions
-- source-of-truth usage rules
-- General Mode flow
-- Advanced Mode flow
-- campaign planning logic
-- batch generation logic
-- pre-output validation
-- deterministic TSV output behavior
+Candidate release label:
+**BiiigBee Campaign Content Generator v1.0-rc1**
 
-## Phase 3 — Build Prompt Template Library
+## Phase 3 — Build / Validate Prompt Template Library — NEXT IN PARALLEL
 
-Create/version at least 8–10 reusable visual prompt families, including product hero, lifestyle, parent-child, student activity, teacher/classroom, puzzle challenge, benefit/infographic, competition, and product box.
+Validate and expand reusable visual prompt families, including:
+- Product Hero
+- Lifestyle
+- Parent-Child
+- Student Activity
+- Teacher/Classroom
+- Puzzle Challenge
+- Benefit / Infographic
+- Competition
+- Product Box
 
-## Phase 4 — Acceptance Testing of Generator
+All template IDs used by Generator tests must resolve to an approved versioned template.
 
-Run the acceptance plan against:
+## Phase 4 — Acceptance Testing of Generator — NEXT
+
+Run the acceptance corpus against:
 - Standard + Competition SKUs
 - N = 1, 5, 20, 30, 60 rows
 - General Mode
@@ -40,10 +54,21 @@ Run the acceptance plan against:
 - invalid SKU cases
 - claim-safety cases
 - diversity and campaign-coherence cases
+- formula-mode IMAGE_PROMPT behavior
+
+Record hard gates and diagnostic rubric scores.
 
 Do not declare v1.0 production-ready if any hard truth/safety/schema gate fails.
 
-## Phase 5 — Google Sheets Prompt Assembly
+## Phase 5 — Fix / Re-test Loop
+
+For each material failure:
+1. classify root cause: knowledge / instruction / schema / template / generation quality
+2. fix the owning source rather than patching individual output rows
+3. version changed contract/template/instruction where required
+4. rerun affected tests plus regression set
+
+## Phase 6 — Google Sheets Prompt Assembly
 
 - placeholder mapping
 - prompt-template version mapping
@@ -51,22 +76,24 @@ Do not declare v1.0 production-ready if any hard truth/safety/schema gate fails.
 - IMAGE_PROMPT column
 - validation
 
-## Phase 6 — Build Visual Prompt Refiner
+## Phase 7 — Build Visual Prompt Refiner
 
-Build only after Campaign Content Generator row contract is stable.
+Build only after Campaign Content Generator row contract is stable and hard-gate tests pass.
 
 The specialist may refine creative execution but may not change SKU facts, audience, objective, campaign role, offer, or claim policy.
 
-## Phase 7 — Pilot Campaign
+## Phase 8 — Pilot Campaign
 
 Pilot at least one representative SKU with approximately 30 rows and complete human review.
 
-## Phase 8 — Portfolio Scale
+## Phase 9 — Portfolio Scale
 
-Expand test coverage and production use across all 24 SKUs, while keeping product truth in `marketing-plan/` and execution logic in `marketing-content-os/`.
+Expand production use across all 24 SKUs while keeping product truth in `marketing-plan/` and execution logic in `marketing-content-os/`.
 
 ## Release Rule
 
 Release sequence:
 
-**Contracts → Generator → Acceptance Test → Prompt Assembly → Visual Refiner → Pilot → 24-SKU Scale**
+**Contracts → Generator Implementation → Acceptance Test → Fix/Re-test → Prompt Assembly → Visual Refiner → Pilot → 24-SKU Scale**
+
+Production v1.0 requires all hard gates to pass; before that use an RC label.
