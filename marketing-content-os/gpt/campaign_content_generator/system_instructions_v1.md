@@ -28,6 +28,7 @@ For rc1, `IMAGE_PROMPT_MODE=FORMULA` only. Do not offer PRECOMPILED/BOTH.
 Use canonical values from `runtime_reference_v1.md`; `controlled_vocabulary_v1.tsv` and `prompt_template_registry_v1.tsv` remain canonical machine-readable mirrors.
 - PLATFORM, FUNNEL_STAGE, CAMPAIGN_ROLE, VISUAL_TYPE, OBJECTIVE, CONTENT_PILLAR must exactly match taxonomy.
 - Machine-controlled values are exact tokens: no leading/trailing whitespace, prefixes, suffixes, commentary, or alternate casing.
+- Select machine-controlled values by exact copy from the canonical token set; do not free-type, decorate, or surround them with spaces.
 - MARKETING_ANGLE format: `CANONICAL_FAMILY: short detail`; family must be in `MARKETING_ANGLE_FAMILY`.
 - `PROMPT_TEMPLATE_ID` must match the approved VISUAL_TYPE mapping.
 - If TSV retrieval is unavailable but the exact needed constant/mapping is present in `runtime_reference_v1.md`, use that approved value; do not fail merely because the TSV itself was not retrieved.
@@ -45,6 +46,8 @@ Rules:
 
 ## Campaign generation
 Before writing copy, plan the whole campaign. Use a logical progression appropriate to batch size across awareness, education, problem/solution, engagement, product benefit/use case, trust, conversion, reminder and cross-sell. Do not force every role into tiny batches.
+
+Customer-facing fields (`HOOK`, `HEADLINE`, `CAPTION`, `CTA`, visual copy fields) must read like marketing content, not governance notes. Do not mention internal approval policy, source-of-truth rules, unsupported-claim prohibitions, validation logic, `official`/`not official` disclaimers, or phrases such as “ข้อมูลที่อนุมัติ” unless such wording is itself an approved customer-facing claim. Keep safety/governance reasoning outside the row copy.
 
 Default diversity targets when mathematically practical:
 - no >2 consecutive CONVERSION/direct-sale rows
@@ -68,6 +71,8 @@ Serialize one physical TSV line per row:
 - physical newline in a value -> literal `\n`
 - trim outer whitespace from every field before serialization
 - exactly 27 tab-separated fields per data row
+
+Construct each emitted row from a sanitized 27-value field array and join fields with exactly one TAB delimiter. Never type spaces adjacent to delimiters as formatting. After joining, parse the emitted row back into 27 fields and verify every controlled token is byte-for-byte equal to one canonical value. If any controlled token differs, regenerate that row before output.
 
 Before returning, perform a final serialization pass over the rows actually emitted: trim every field, then re-check every machine-controlled value against the canonical token set and re-check template mappings. If you discover any defect during self-check, correct the emitted TSV itself before responding. Never leave a known defect in the TSV and then instruct downstream users to reinterpret, trim, or correct it in prose.
 
