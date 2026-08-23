@@ -12,7 +12,13 @@ BiiigBee Campaign Content Generator
 Copy the complete contents of:
 `marketing-content-os/gpt/campaign_content_generator/system_instructions_v1.md`
 
-Do not summarize or rewrite the instruction text when creating the rc1 candidate.
+This is the **compact canonical Builder version** and is intentionally below the 8,000-character Instructions limit. Current authored length: **5,735 characters**.
+
+Do **not** paste:
+`marketing-content-os/gpt/campaign_content_generator/system_instructions_full_reference_v1.md`
+into the Instructions field. That file is maintainer/reference documentation only.
+
+Do not summarize or rewrite the compact canonical instruction text when creating the rc1 candidate.
 
 ### Conversation Starters
 Copy the four starters from:
@@ -25,7 +31,7 @@ Upload exactly the 16 files listed in:
 Important:
 - use populated `marketing-content-os/schemas/sku_lookup_v1.tsv`
 - do not upload `sku_lookup_schema.tsv`
-- do not upload governance documents that duplicate runtime rules already embedded in Instructions
+- do not upload the full-reference instructions as Knowledge for rc1
 - keep the uploaded bundle version-aligned with `knowledge_manifest_v1.yaml`
 
 ### Capabilities for rc1 Acceptance
@@ -43,19 +49,19 @@ Keep external variability low:
 - N > 20 uses max-20-row chunks with global continuous sequence
 - all content remains `DRAFT_REVIEW_REQUIRED`
 
+### Immediate Smoke Test After Creation
+Before full acceptance, run:
+1. valid Standard SKU + 1 row
+2. valid Competition SKU + 5 rows
+3. invalid SKU -> zero fabricated rows
+4. fake discount/official endorsement -> reject unsafe override
+5. 30 rows -> one CAMPAIGN_ID and global SEQUENCE 1..30 across chunks
+
+If any hard truth/schema/safety test fails, fix GitHub source first, rebuild the GPT candidate, then retest.
+
 ### Release Label
 Use `v1.0-rc1` / Candidate / Acceptance Testing Required.
 Do not label Production v1.0 until TC-001..TC-032 and independent deterministic + semantic gates pass.
-
-### Immediate Smoke Test After Creation
-Before full acceptance, run these five checks in Preview:
-1. valid Standard SKU + 1 row
-2. valid Competition SKU + 5 rows
-3. invalid SKU must return zero fabricated rows
-4. attempted fake discount/official endorsement must be rejected
-5. 30-row request must preserve global campaign sequence across chunks
-
-If any smoke test fails a hard truth/schema/safety rule, fix the GitHub source first, rebuild the GPT candidate, then retest.
 
 ---
 
@@ -71,6 +77,8 @@ BiiigBee Visual Prompt Refiner
 Copy the complete contents of:
 `marketing-content-os/gpt/visual_prompt_refiner/system_instructions_v1.md`
 
+Before creating GPT #2, independently confirm that its current Instructions text is below the Builder character limit. GPT #2 remains on hold until GPT #1 row contract passes acceptance.
+
 ### Conversation Starters
 Use:
 `marketing-content-os/gpt/visual_prompt_refiner/conversation_starters_v1.md`
@@ -85,10 +93,11 @@ Do not create/publish GPT #2 as a production tool before GPT #1 has a stable acc
 ---
 
 ## Change-Control Rule
-When an instruction, schema, taxonomy, prompt template, or Marketing Plan source changes:
-1. change the owning GitHub source first;
-2. update `knowledge_manifest_v1.yaml` / version reference as required;
-3. rebuild the GPT knowledge upload set;
-4. rerun affected acceptance tests plus regression tests.
+Whenever Instructions change:
+1. edit GitHub canonical source first;
+2. verify Instructions remain <8,000 characters;
+3. update manifest/version if material;
+4. rebuild GPT/Knowledge as required;
+5. rerun affected acceptance/regression tests.
 
 The GPT Builder configuration must never become a separate undocumented source of truth.
