@@ -1,29 +1,37 @@
-# 04 — Image Prompt Template Architecture
+# 04 — Image Prompt Template Architecture v1
 
-## แนวคิดหลัก
+## Core Model
+Do not let the GPT invent a new long-form image prompt freestyle for every row.
 
-ไม่ให้ GPT เขียน image prompt แบบ freestyle ใหม่ทุก row
+Use:
 
-ใช้:
+> Content Row + SKU Lookup + Approved Prompt Template + Placeholder Resolution
 
-> Row Parameters + Prompt Template + Placeholder Mapping + Formula
+In v1, `IMAGE_PROMPT_MODE=FORMULA` only. The GPT leaves the final `IMAGE_PROMPT` field blank; Google Sheets/App Script assembles it later.
 
 ## Placeholder Convention
+Use `{{PLACEHOLDER_NAME}}`.
 
-ใช้รูปแบบ `{{PLACEHOLDER_NAME}}`
-
-ตัวอย่าง:
-
+Row-owned examples:
 - `{{SKU}}`
 - `{{AUDIENCE}}`
+- `{{OBJECTIVE}}`
 - `{{VISUAL_SUBJECT}}`
 - `{{VISUAL_SCENE}}`
 - `{{VISUAL_EMOTION}}`
 - `{{TEXT_SAFE_ZONE}}`
 - `{{ASPECT_RATIO}}`
 
-## Template Library ที่ควรมี
+SKU-owned examples:
+- `{{BRAND_NAME}}`
+- `{{PRODUCT_NAME}}`
+- `{{GRADE_BAND}}`
+- `{{DISPLAY_DIFFICULTY}}`
+- `{{PRODUCT_FORMAT}}`
 
+SKU-owned values come from approved SKU lookup/source data, not extra content-row columns.
+
+## Approved v1 Template Families
 - `IMG-PRODUCT-HERO-V1`
 - `IMG-LIFESTYLE-V1`
 - `IMG-PARENT-CHILD-V1`
@@ -35,6 +43,18 @@
 - `IMG-COMPETITION-V1`
 - `IMG-PRODUCT-BOX-V1`
 
-## Template Versioning
+All ten are implemented in `templates/image_prompt_template_v1.txt` and registered in `templates/prompt_template_registry_v1.tsv`.
 
-ทุก row ต้องมี `PROMPT_TEMPLATE_ID` เพื่อ audit และเปลี่ยนเวอร์ชันได้
+## Mapping Rule
+Each canonical `VISUAL_TYPE` maps to an approved template family. Unknown IDs or incompatible VISUAL_TYPE/template mappings are hard validation failures.
+
+## Versioning
+Every row stores `PROMPT_TEMPLATE_ID`. Prompt-template library/registry changes require version traceability in the knowledge manifest.
+
+## Assembly Validation
+Final prompt assembly must verify:
+- SKU lookup resolves exactly one approved record
+- template ID exists
+- all required placeholders resolve
+- no `{{PLACEHOLDER}}` remains
+- product facts match approved lookup values
