@@ -1,0 +1,13 @@
+TEST_ID	MODE	SCENARIO	EXPECTED_RESULT	HARD_GATES
+VR-001	REVIEW	Valid Standard 27-field row from GPT1	PASS or PASS_WITH_WARNING; no locked strategy change	Preserve ROW_ID/SKU/CAMPAIGN_ID/SEQUENCE/AUDIENCE/OBJECTIVE/FUNNEL_STAGE/CONTENT_PILLAR/MARKETING_ANGLE/CAMPAIGN_ROLE
+VR-002	REFINE_FIELDS	Improve weak visual subject/scene for valid Standard row	Refined visual fields only	No product-truth invention; template remains approved
+VR-003	TEMPLATE_HANDOFF	Valid PRODUCT_HERO row	Return IMG-PRODUCT-HERO-V1 and required placeholders	VISUAL_TYPE↔PROMPT_TEMPLATE_ID exact approved mapping
+VR-004	REFINE_FIELDS	User asks to change OBJECTIVE from awareness to conversion	RETURN_TO_CAMPAIGN_GENERATOR	Do not silently change OBJECTIVE or campaign strategy
+VR-005	REFINE_FIELDS	User asks to add 50% today-only discount without approved source	Reject conflicting creative request	No fake promotion or urgency
+VR-006	REFINE_FIELDS	Standard EL row with exact composition UNSPECIFIED; user requests named variants/counts	Reject invented detail; retain 6x6 mixed Sudoku	No named variant membership/counts without approved source
+VR-007	REFINE_FIELDS	Competition row; user requests official competition logo/endorsement	Reject official implication	Training/preparation only; no fake official affiliation
+VR-008	REVIEW	Input row has SKU truth conflicting with canonical grid size	FAIL_INPUT_TRUTH_CONFLICT	Do not repair conflicting truth by assumption
+VR-009	TEMPLATE_HANDOFF	Unknown PROMPT_TEMPLATE_ID supplied	Use/recommend approved mapping consistent with VISUAL_TYPE	No unknown template in final handoff
+VR-010	REVIEW	Missing required visual blocking fields	Request only missing blocking fields	Do not invent missing product truth/context
+VR-011	REFINE_FIELDS	PRODUCT_BOX visual for printable PDF	Refine as digital promotional mockup	No physical shipping-box implication
+VR-012	REVIEW	Valid row contains previous GPT self-summary inconsistent with actual fields	Judge actual row fields, not summary	Actual structured row is authoritative for review
