@@ -1,72 +1,46 @@
 # Pre-Creation Release Checklist — BiiigBee Campaign Content Generator v1.0-rc1
 
-ใช้ checklist นี้ก่อนสร้าง Custom GPT ตัวจริงใน GPT Builder
-
-## A. Canonical Sources
+## A. Builder
 - [ ] ใช้ approved `main`
-- [ ] Instructions ใช้ `campaign_content_generator/system_instructions_v1.md`
-- [ ] **Instructions < 8,000 characters**; current authored version = **5,735 characters**
-- [ ] ไม่ paste `system_instructions_full_reference_v1.md` เข้า Builder
-- [ ] Builder settings ใช้ `campaign_content_generator/gpt_builder_config_v1.md`
-- [ ] Knowledge manifest ตรงกับชุดไฟล์ที่จะ upload
+- [ ] Instructions = `campaign_content_generator/system_instructions_v1.md`
+- [ ] Instructions < 8,000 characters
+- [ ] Description ตรง Builder Config
+- [ ] Conversation Starters = canonical 4 รายการ
 
-## B. GPT Builder Fields
-- [ ] Name = `BiiigBee Campaign Content Generator`
-- [ ] Description ตรงกับ Builder Config
-- [ ] paste compact canonical Instructions ครบทั้งไฟล์
-- [ ] Conversation Starters ใช้ canonical 4 รายการ
-- [ ] Release status = `v1.0-rc1 / Candidate / Acceptance Testing Required`
+## B. Knowledge Bundle
+- [ ] Upload exact rc1 bundle **19 files** ตาม `gpt_builder_config_v1.md`
+- [ ] `sku_lookup_v1.tsv` ครบ 24 SKU
+- [ ] `sku_content_spec_v1.tsv` ครบ 24 SKU
+- [ ] `sku_content_reference_v1.md` ถูก upload
+- [ ] `runtime_reference_v1.md` ถูก upload
+- [ ] `controlled_vocabulary_v1.tsv` และ prompt registry/template library ถูก upload
+- [ ] ไม่ upload `sku_lookup_schema.tsv` หรือ full-reference Instructions
 
-## C. Knowledge Bundle
-- [ ] Upload exact rc1 bundle 16 filesตาม `gpt_builder_config_v1.md`
-- [ ] ใช้ `sku_lookup_v1.tsv` populated ครบ 24 SKU
-- [ ] ไม่ upload `sku_lookup_schema.tsv`
-- [ ] ไม่ upload full-reference Instructions เป็น Knowledge ใน rc1
-- [ ] `controlled_vocabulary_v1.tsv` มี FUNNEL_STAGE, CAMPAIGN_ROLE, VISUAL_TYPE, PLATFORM, OBJECTIVE, CONTENT_PILLAR, MARKETING_ANGLE_FAMILY ครบ
-- [ ] `prompt_template_registry_v1.tsv` มี 10 approved template families
-- [ ] `image_prompt_template_v1.txt` มี template bodies ครบ 10 families
-- [ ] ไม่มี knowledge file รุ่นเก่าหรือ duplicate rules ที่ทำให้ conflict
+## C. Product-detail grounding
+- [ ] Grid size มาจาก SKU content spec/reference เท่านั้น
+- [ ] `VARIANT_SCOPE` ไม่ถูกตีความว่าเป็น exact composition ของทุก Standard SKU
+- [ ] ถ้า `EXACT_COMPOSITION_STATUS=UNSPECIFIED` ห้ามอ้าง named variants, ratios หรือ per-type counts
+- [ ] Standard SKU ใช้ approved grid size + generic mixed-Sudoku wording ได้
+- [ ] Competition claims คง training/preparation และไม่อ้าง exhaustive official coverage
 
-## D. Capabilities During Acceptance
-- [ ] Knowledge retrieval = ON
-- [ ] Web browsing = OFF / not required
-- [ ] Image generation = OFF / not required
-- [ ] Actions/API = OFF / not required
-- [ ] ไม่มี publishing/scheduling integration ใน rc1
-
-## E. Locked Runtime Behavior
-- [ ] General Mode minimum input = SKU + NUMBER_OF_ROWS
+## D. Locked Runtime
+- [ ] General Mode minimum = SKU + NUMBER_OF_ROWS
 - [ ] PLATFORM=AUTO resolve เป็น canonical primary platform เดียว
-- [ ] IMAGE_PROMPT_MODE = FORMULA only
-- [ ] TSV = exactly 27 fields / one physical line per row
-- [ ] IMAGE_PROMPT = blank ใน v1 Formula Mode
-- [ ] N > 20 = chunks ไม่เกิน 20 rows และ global SEQUENCE ต่อเนื่อง
-- [ ] MARKETING_ANGLE ใช้ `FAMILY: detail` และ family canonical
-- [ ] Competition messaging = training/preparation only unless approved source permits otherwise
-- [ ] Content status = DRAFT_REVIEW_REQUIRED
+- [ ] IMAGE_PROMPT_MODE=FORMULA only
+- [ ] exactly 27 fields; IMAGE_PROMPT blank
+- [ ] N>20 chunks <=20 rows และ global sequence ต่อเนื่อง
+- [ ] MARKETING_ANGLE family canonical
+- [ ] status = DRAFT_REVIEW_REQUIRED
 
-## F. Smoke Test Before Full Acceptance
-- [ ] Standard SKU / N=1 ได้ 1 row schema ถูกต้อง
-- [ ] Competition SKU / N=5 ไม่มี official/exam/guarantee claim
-- [ ] Invalid SKU ได้ validation error และ 0 fabricated rows
-- [ ] Fake discount / fake endorsement override ถูก reject
-- [ ] N=30 รักษา CAMPAIGN_ID เดียวและ SEQUENCE 1..30 ข้าม chunks
+## E. Smoke Tests
+- [ ] Standard SKU / N=1: schema + product details grounded
+- [ ] Competition SKU / N=5: no official/exam/guarantee claim
+- [ ] Invalid SKU: 0 fabricated rows
+- [ ] Fake promotion/endorsement: rejected
+- [ ] N=30: one CAMPAIGN_ID + sequence 1..30
+- [ ] No invented exact composition/counts when source says UNSPECIFIED
 
-## G. Independent Validation
-- [ ] ใช้ `tools/validate_campaign_output.py` รุ่นเดียวกับ repo
-- [ ] validator ตรวจ OBJECTIVE และ CONTENT_PILLAR canonical values
-- [ ] validator ตรวจ MARKETING_ANGLE family ไม่ใช่ full detail string
-- [ ] validator ตรวจ prompt template ↔ VISUAL_TYPE mapping
-- [ ] validator ตรวจ row count / 27 fields / sequence / SKU / IMAGE_PROMPT blank
+## F. Release Gate
+Do not label `Production v1.0` until TC-001..TC-032, deterministic hard gates, and semantic/human QA pass with no unresolved truth/safety/schema blocker.
 
-## H. Release Gate
-สร้าง GPT #1 candidate ได้เมื่อ A–G พร้อมทั้งหมด
-
-ห้ามเปลี่ยน release เป็น `Production v1.0` จนกว่า:
-1. TC-001..TC-032 ผ่านตาม expected behavior;
-2. deterministic hard gates ผ่าน;
-3. semantic/human QA ผ่าน;
-4. ไม่มี unresolved truth/safety/schema blocker.
-
-## GPT #2 Boundary
-`BiiigBee Visual Prompt Refiner` มี specification พร้อม แต่ยังไม่ใช่ production build target จนกว่า GPT #1 row contract จะผ่าน acceptance และ stable. ก่อนสร้าง GPT #2 ต้องตรวจ Instructions length <8,000 characters เช่นเดียวกัน.
+GPT #2 remains on hold until GPT #1 row contract is stable.
