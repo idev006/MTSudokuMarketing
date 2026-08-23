@@ -8,12 +8,12 @@ GitHub project documents are the operational SSOT. Chat, model memory, temporary
 Instruction changes must now include internal dry-run simulation before commit/merge: simulate affected acceptance behavior, iterate until expected pass or blocker, cap at 1,000 internal dry-run iterations, then still require real Builder rerun and validation.
 
 ## Current Gate
-Smoke gate passed. Full acceptance TC-001..TC-032 is **IN PROGRESS** on the synchronized SYSTEM_INSTRUCTION_VERSION 1.7 candidate. TC-006 v1.7 rerun passed deterministic validation and competition-safety review with non-blocking warnings.
+Smoke gate passed. Full acceptance TC-001..TC-032 is **IN PROGRESS** on the synchronized SYSTEM_INSTRUCTION_VERSION 1.7 candidate. TC-007 passed invalid-SKU fail-safe behavior with zero fabricated rows.
 
 ## Full Acceptance Status
 | Test range | Status | Notes |
 |---|---|---|
-| TC-001..TC-008 | IN_PROGRESS | TC-001 PASS_WITH_WARNING; TC-002 PASS_WITH_WARNING; TC-003 rerun PASS_WITH_WARNING; TC-004 PASS_WITH_WARNING; TC-005 v1.6 rerun PASS_WITH_WARNING; TC-006 v1.7 rerun PASS_WITH_WARNING; TC-007 next |
+| TC-001..TC-008 | IN_PROGRESS | TC-001 PASS_WITH_WARNING; TC-002 PASS_WITH_WARNING; TC-003 rerun PASS_WITH_WARNING; TC-004 PASS_WITH_WARNING; TC-005 v1.6 rerun PASS_WITH_WARNING; TC-006 v1.7 rerun PASS_WITH_WARNING; TC-007 PASS; TC-008 next |
 | TC-009..TC-016 | PENDING | Advanced overrides, safety, Formula, visual override |
 | TC-017..TC-024 | PENDING | audience fit, missing inputs, invalid template, Tier-1 conflict |
 | TC-025..TC-032 | PENDING | diversity, TSV escaping, large batches, AUTO, taxonomy, lookup, manifest |
@@ -30,6 +30,7 @@ Smoke gate passed. Full acceptance TC-001..TC-032 is **IN PROGRESS** on the sync
 | TC-005 rerun | PASS_WITH_WARNING | 1.6 | 30 | PASS | 44/45 | `tests/evidence/TC-005_2026-08-23_rerun_v1.6_review.md` | MACHINE-TOKEN-001 regression passed; competition safety and product grounding pass. COPY-META-001 materially improved. OUTPUT-FMT-001 still reproduced. |
 | TC-006 initial | FAIL | 1.6 | 60 | FAIL | not release-scored | `tests/evidence/TC-006_2026-08-23_review.md` | Row 31 emitted `OBJECTIVE=PARENT_TEACHER_INSIGHT`, which is a CONTENT_PILLAR token, not an OBJECTIVE token. MACHINE-TOKEN-002 opened. |
 | TC-006 rerun | PASS_WITH_WARNING | 1.7 | 60 | PASS | 44/45 | `tests/evidence/TC-006_2026-08-23_rerun_v1.7_review.md` | MACHINE-TOKEN-002 regression passed. OUTPUT-FMT-001 reproduced. Minor exact duplicate hook/CTA patterns observed in a 60-row batch. |
+| TC-007 | PASS | 1.7 | 0 | PASS | n/a | `tests/evidence/TC-007_2026-08-23_raw.md` | Invalid SKU rejected; zero rows; no fabricated replacement SKU; no templates or prompt assembly used. |
 
 ## TC-006 v1.7 Rerun Observations
 - row_count_actual: 60
@@ -52,6 +53,18 @@ Smoke gate passed. Full acceptance TC-001..TC-032 is **IN PROGRESS** on the sync
 - unsupported price/discount/deadline/stock/review/award/testimonial claims observed: 0
 - deterministic gate: PASS
 - result: PASS_WITH_WARNING
+
+## TC-007 Observations
+- input SKU: `INVALID-SKU`
+- expected behavior: fail-safe rejection, zero rows
+- observed `VALIDATION_ERROR`: invalid SKU not found in approved SKU source of truth
+- row_count_actual: 0
+- fabricated replacement SKU observed: 0
+- campaign rows emitted: 0
+- templates used: 0
+- prompt assembly performed: no
+- deterministic gate: PASS
+- result: PASS
 
 ## Acceptance Defects
 
@@ -94,4 +107,4 @@ For future GPT instruction edits, maintainers must mentally simulate affected ac
 Do not freeze GPT #1 row contract or release Production v1.0 until TC-001..TC-032 satisfy the acceptance rubric with no unresolved hard failures and complete evidence. GPT #2 remains HOLD until GPT #1 acceptance/freeze is complete and GPT #2's own acceptance corpus passes.
 
 ## Immediate Next Action
-Execute **TC-007** from `campaign_content_generator_acceptance_corpus_v1.tsv` against the synchronized v1.7 candidate. Preserve raw response, verify invalid SKU fail-safe behavior and zero fabricated rows, then write the result back to this SSOT before advancing.
+Execute **TC-008** from `campaign_content_generator_acceptance_corpus_v1.tsv` against the synchronized v1.7 candidate. Preserve raw response, verify DEVIL/GRANDMASTER positioning for the elementary SKU without beginner mismatch or unsafe/product-fact invention, then write the result back to this SSOT before advancing.
