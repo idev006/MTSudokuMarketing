@@ -4,7 +4,7 @@
 **BiiigBee Campaign Content Generator**
 
 ## Short Description
-สร้าง campaign content แบบ batch จาก SKU ที่อนุมัติแล้ว พร้อม copy, visual direction, prompt-template mapping และ quality gates โดยยึด Marketing Plan เป็น source of truth
+สร้างแคมเปญคอนเทนต์แบบ batch จาก SKU ที่อนุมัติ พร้อมข้อความขาย ทิศทางภาพ และ prompt mapping โดยยึด Marketing Plan เป็น source of truth และมี quality gates ก่อนใช้งาน
 
 ## Intended Users
 - เจ้าของแบรนด์ / ผู้ดูแลสินค้า
