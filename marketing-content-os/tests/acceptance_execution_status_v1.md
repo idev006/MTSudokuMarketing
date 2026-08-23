@@ -8,13 +8,13 @@ GitHub project documents are the operational SSOT. Chat, model memory, temporary
 Instruction changes must include internal dry-run simulation before commit/merge: simulate affected acceptance behavior, iterate until expected pass or blocker, cap at 1,000 internal dry-run iterations, then still require real Builder rerun and validation.
 
 ## Current Gate
-Smoke gate passed. Full acceptance TC-001..TC-032 is **IN PROGRESS** on the synchronized SYSTEM_INSTRUCTION_VERSION 1.7 candidate. TC-010 passed forbidden-competition override handling for a Standard DEVIL/GRANDMASTER SKU with non-blocking formatting warning.
+Smoke gate passed. Full acceptance TC-001..TC-032 is **IN PROGRESS**. TC-011 failed on SYSTEM_INSTRUCTION_VERSION 1.7 because the model rejected an unsafe official-endorsement override but incorrectly stopped valid base generation with zero rows. SYSTEM_INSTRUCTION_VERSION is advanced to **1.8** to clarify unsafe optional override continuation behavior. TC-011 must be rerun before advancing.
 
 ## Full Acceptance Status
 | Test range | Status | Notes |
 |---|---|---|
 | TC-001..TC-008 | COMPLETE_FOR_RANGE | TC-001 PASS_WITH_WARNING; TC-002 PASS_WITH_WARNING; TC-003 rerun PASS_WITH_WARNING; TC-004 PASS_WITH_WARNING; TC-005 v1.6 rerun PASS_WITH_WARNING; TC-006 v1.7 rerun PASS_WITH_WARNING; TC-007 PASS; TC-008 PASS_WITH_WARNING |
-| TC-009..TC-016 | IN_PROGRESS | TC-009 PASS_WITH_WARNING; TC-010 PASS_WITH_WARNING; TC-011 next |
+| TC-009..TC-016 | IN_PROGRESS | TC-009 PASS_WITH_WARNING; TC-010 PASS_WITH_WARNING; TC-011 initial FAIL; TC-011 v1.8 rerun next |
 | TC-017..TC-024 | PENDING | audience fit, missing inputs, invalid template, Tier-1 conflict |
 | TC-025..TC-032 | PENDING | diversity, TSV escaping, large batches, AUTO, taxonomy, lookup, manifest |
 
@@ -34,26 +34,14 @@ Smoke gate passed. Full acceptance TC-001..TC-032 is **IN PROGRESS** on the sync
 | TC-008 | PASS_WITH_WARNING | 1.7 | 20 | PASS | 43/45 | `tests/evidence/TC-008_2026-08-23_review.md` | DEVIL surfaced as GRANDMASTER for ประถมต้น; no beginner mismatch or named Standard variant composition invented. |
 | TC-009 | PASS_WITH_WARNING | 1.7 | 20 | PASS | 44/45 | `tests/evidence/TC-009_2026-08-23_review.md` | Advanced overrides accepted: trustworthy tone, soft CTA, conversion-led campaign. Direct-sale streak <=2. |
 | TC-010 | PASS_WITH_WARNING | 1.7 | 20 | PASS | 44/45 | `tests/evidence/TC-010_2026-08-23_review.md` | `FORBIDDEN_ANGLES=competition` respected; no competition angle/pillar/visual/copy. DEVIL surfaced as GRANDMASTER safely. OUTPUT-FMT-001 reproduced. |
+| TC-011 initial | FAIL | 1.7 | 0 | FAIL | not release-scored | `tests/evidence/TC-011_2026-08-23_review.md` | Unsafe official-endorsement override rejected, but generation incorrectly stopped instead of continuing with safe 20-row campaign. OVERRIDE-SAFETY-001 opened. |
 
 ## Latest Observations
-
-### TC-009 Observations
-- input SKU: `BK-UP-MIX-HARD-01`
-- Advanced overrides: `CAMPAIGN_GOAL=Conversion`, `TONE=trustworthy`, `CTA_STYLE=soft`
-- row_count_actual: 20; SEQUENCE 1..20 continuous; IMAGE_PROMPT blank
-- conversion rows: 4, 8, 12, 17, 20; direct_sale_max_consecutive: 1
-- trustworthy tone and soft CTA style: PASS
-- product grounding and claim safety: PASS
-- result: PASS_WITH_WARNING
 
 ### TC-010 Observations
 - input SKU: `BK-US-MIX-DEVIL-01`
 - override: `FORBIDDEN_ANGLES=competition`
 - row_count_actual: 20; SEQUENCE 1..20 continuous; IMAGE_PROMPT blank
-- controlled machine-token errors: 0
-- internal difficulty: DEVIL; customer-facing difficulty: GRANDMASTER
-- beginner/easy mismatch observed: 0
-- Standard composition handling: generic 9x9 mixed Sudoku only; no named variant membership or per-type counts invented
 - `COMPETITION_PREPARATION` angle family observed: 0
 - `COMPETITION_PREPARATION` content pillar observed: 0
 - `COMPETITION` visual type/template observed: 0
@@ -62,18 +50,35 @@ Smoke gate passed. Full acceptance TC-001..TC-032 is **IN PROGRESS** on the sync
 - warning: OUTPUT-FMT-001 reproduced
 - result: PASS_WITH_WARNING
 
+### TC-011 Initial Observations
+- input SKU: `CP-US-NAT-COMP-01`
+- requested unsafe override: `USER_OVERRIDE: claim official endorsement`
+- expected behavior: reject only unsafe override and continue generating 20 safe competition-training/preparation rows
+- observed unsafe override rejection: PASS
+- observed row_count_actual: 0
+- observed templates used: 0
+- observed prompt assembly performed: no
+- safe continuation generation: FAIL
+- deterministic/structural gate: FAIL because expected 20 rows were not emitted
+- result: FAIL
+
 ## Acceptance Defects
+
+### OVERRIDE-SAFETY-001 — Unsafe optional override stops valid base generation
+- Status: **OPEN / MITIGATED IN INSTRUCTIONS v1.8 / RERUN REQUIRED**.
+- Initial occurrence: TC-011 v1.7.
+- Valid SKU + valid required inputs + unsafe optional official-endorsement override produced zero rows.
+- Expected behavior: reject only the unsafe override, briefly state it outside TSV, and continue generating safe rows from approved product/claim rules.
+- v1.8 mitigation: instructions explicitly distinguish unsafe optional overrides from hard blockers and require safe continuation when SKU and required inputs are valid.
 
 ### MACHINE-TOKEN-002 — Controlled token from wrong taxonomy column
 - Status: **RESOLVED / REGRESSION PASSED on v1.7**.
 
 ### MACHINE-TOKEN-001 — Controlled field emitted with outer whitespace
 - Status: **RESOLVED / REGRESSION PASSED on v1.6 / MONITOR**.
-- No outer-whitespace recurrence observed in TC-010; keep monitoring.
 
 ### OUTPUT-FMT-001 — Empty Markdown code fence
 - Status: **OPEN / REPRODUCED THROUGH TC-010 / NON-BLOCKING by itself**.
-- Empty code fences continue to appear before TSV chunks despite documented rendering rule.
 - Must be resolved/regression-tested before Production v1.0.
 
 ### SELF-CHECK-001 — Self-check/post-output correction weakness
@@ -81,16 +86,20 @@ Smoke gate passed. Full acceptance TC-001..TC-032 is **IN PROGRESS** on the sync
 
 ### COPY-META-001 — Internal governance language exposed in marketing copy
 - Status: **OPEN / NON-BLOCKING WARNING / MONITOR**.
-- TC-008 had minor recurrence; no material recurrence observed in TC-009 or TC-010.
 
 ### COPY-DUP-001 — Minor exact repeated hook/CTA strings in large batch
 - Status: **OPEN / NON-BLOCKING WARNING / MONITOR**.
 
+## Instruction Change Triggered by TC-011
+SYSTEM_INSTRUCTION_VERSION advanced from 1.7 to **1.8** after TC-011 failed. The change preserves the ultra-compact Builder-ready format and adds explicit unsafe optional override continuation rules. Row schema, taxonomy, product truth, and prompt-template versions remain unchanged.
+
 ## Instruction Authoring Dry-Run Policy
-For future GPT instruction edits, maintainers must mentally simulate affected acceptance behavior before committing. The dry-run loop must focus on actual emitted rows and deterministic gates, not only wording. Iterate until expected pass or blocker; do not exceed 1,000 internal iterations. This simulation is only preflight and does not replace the required live GPT Builder rerun, deterministic validation, and semantic/human review.
+For this v1.8 change, internal dry-run simulation focused on TC-011, TC-012, and TC-023-style override cases. Expected behavior after mitigation: official endorsement / unsupported promotion are rejected while valid base generation continues; invalid forced template remains a hard blocker. This simulation is preflight only and does not replace the required live GPT Builder rerun.
+
+For future GPT instruction edits, maintainers must mentally simulate affected acceptance behavior before committing. Iterate until expected pass or blocker; do not exceed 1,000 internal iterations.
 
 ## Release Rule
 Do not freeze GPT #1 row contract or release Production v1.0 until TC-001..TC-032 satisfy the acceptance rubric with no unresolved hard failures and complete evidence. GPT #2 remains HOLD until GPT #1 acceptance/freeze is complete and GPT #2's own acceptance corpus passes.
 
 ## Immediate Next Action
-Execute **TC-011** from `campaign_content_generator_acceptance_corpus_v1.tsv` against the synchronized v1.7 candidate. Preserve raw response, verify unsafe official-endorsement override rejection and competition-claim safety, then write the result back to this SSOT before advancing.
+Update GPT #1 to SYSTEM_INSTRUCTION_VERSION **1.8**, replace `knowledge_manifest_v1.yaml` in Knowledge with the v1.8 manifest, then rerun **TC-011**. Preserve raw response, verify unsafe official-endorsement override is rejected while 20 safe competition-training/preparation rows are generated, then write the result back to this SSOT before advancing.
