@@ -6,12 +6,12 @@ This execution record is governed by `marketing-content-os/docs/00_DOCUMENT_DRIV
 GitHub project documents are the operational SSOT. Chat, model memory, temporary notes, and unsynchronized GPT Builder settings are not authoritative by themselves. Every material acceptance result, blocker, mitigation, version change, and release decision must be recorded in the repository.
 
 ## Current Gate
-Smoke gate passed. Full acceptance TC-001..TC-032 is **BLOCKED AT TC-005**. TC-005 on SYSTEM_INSTRUCTION_VERSION 1.3 reproduced a blocking controlled-token whitespace defect. SYSTEM_INSTRUCTION_VERSION 1.4 is implemented and requires live Builder synchronization plus TC-005 regression rerun.
+Smoke gate passed. Full acceptance TC-001..TC-032 is **BLOCKED AT TC-005**. TC-005 on SYSTEM_INSTRUCTION_VERSION 1.3 reproduced a blocking controlled-token whitespace defect. v1.4 mitigation was implemented, but its full Builder Instructions exceeded the GPT Builder character limit. SYSTEM_INSTRUCTION_VERSION 1.5 is the compact Builder-ready form and requires live Builder synchronization plus TC-005 regression rerun.
 
 ## Full Acceptance Status
 | Test range | Status | Notes |
 |---|---|---|
-| TC-001..TC-008 | BLOCKED | TC-001 PASS_WITH_WARNING; TC-002 PASS_WITH_WARNING; TC-003 rerun PASS_WITH_WARNING; TC-004 PASS_WITH_WARNING; TC-005 FAIL on v1.3; rerun required on v1.4 |
+| TC-001..TC-008 | BLOCKED | TC-001 PASS_WITH_WARNING; TC-002 PASS_WITH_WARNING; TC-003 rerun PASS_WITH_WARNING; TC-004 PASS_WITH_WARNING; TC-005 FAIL on v1.3; rerun required on compact v1.5 |
 | TC-009..TC-016 | PENDING | Advanced overrides, safety, Formula, visual override |
 | TC-017..TC-024 | PENDING | audience fit, missing inputs, invalid template, Tier-1 conflict |
 | TC-025..TC-032 | PENDING | diversity, TSV escaping, large batches, AUTO, taxonomy, lookup, manifest |
@@ -50,12 +50,12 @@ For each GPT answer:
 
 ## Acceptance Defects
 ### MACHINE-TOKEN-001 — Controlled field emitted with outer whitespace
-- Status: **REOPENED / BLOCKING / v1.4 FIX IMPLEMENTED / REGRESSION REQUIRED**.
+- Status: **REOPENED / BLOCKING / v1.5 BUILDER-READY FIX IMPLEMENTED / REGRESSION REQUIRED**.
 - Initial occurrence: TC-003 v1.2 `OBJECTIVE=" CREATE_ENGAGEMENT"`.
 - TC-003 v1.3 rerun passed.
 - Recurrence: TC-005 v1.3 row 1 `CAMPAIGN_ROLE=" AWARENESS"`.
-- v1.4 mitigation: controlled values must be selected by exact copy from canonical tokens; rows must be constructed from sanitized 27-field arrays, joined with TAB only, parsed back, and machine tokens compared byte-for-byte before output.
-- Closure rule: TC-005 rerun on synchronized v1.4 must pass deterministic validation.
+- v1.5 mitigation: compact Builder-ready instructions preserve exact-copy canonical tokens, sanitized 27-field arrays, TAB-only joins, parse-back validation, and repair-before-output.
+- Closure rule: TC-005 rerun on synchronized v1.5 must pass deterministic validation.
 
 ### OUTPUT-FMT-001 — Empty Markdown code fence
 - Status: **OPEN / REPRODUCED THROUGH TC-005 / NON-BLOCKING by itself**.
@@ -67,21 +67,21 @@ For each GPT answer:
 - Continue checking large batches and machine-field correctness.
 
 ### COPY-META-001 — Internal governance language exposed in marketing copy
-- Status: **OPEN / REPRODUCED IN TC-005 / v1.4 MITIGATION IMPLEMENTED**.
+- Status: **OPEN / REPRODUCED IN TC-005 / v1.5 MITIGATION IMPLEMENTED**.
 - TC-004 first showed internal approval-policy language in customer copy.
 - TC-005 repeatedly includes customer-facing explanations such as not claiming official questions, not guaranteeing competition results, and not exceeding approved information.
 - Product/claim safety remains correct, but commercial polish is reduced.
-- v1.4 explicitly keeps governance/safety rationale outside customer-facing row fields.
+- v1.5 keeps governance/safety rationale outside customer-facing row fields.
 
-## Instruction Change Triggered by TC-005
-SYSTEM_INSTRUCTION_VERSION advanced from 1.3 to **1.4**. Row schema, taxonomy, product truth, and prompt-template versions remain unchanged.
+## Instruction Change Triggered by Builder Limit
+SYSTEM_INSTRUCTION_VERSION advanced from 1.4 to **1.5**. The change is a compact Builder-ready rewrite preserving v1.4 mitigations. Row schema, taxonomy, product truth, and prompt-template versions remain unchanged.
 
 ## Release Rule
 Do not freeze GPT #1 row contract or release Production v1.0 until TC-001..TC-032 satisfy the acceptance rubric with no unresolved hard failures and complete evidence. GPT #2 remains HOLD until GPT #1 acceptance/freeze is complete and GPT #2's own acceptance corpus passes.
 
 ## Immediate Next Action
-1. Synchronize live GPT #1 Builder Instructions with `system_instructions_v1.md` version 1.4.
-2. Replace Builder Knowledge `knowledge_manifest_v1.yaml` with the current manifest showing `SYSTEM_INSTRUCTION_VERSION: 1.4`.
+1. Synchronize live GPT #1 Builder Instructions with compact `system_instructions_v1.md` version 1.5.
+2. Replace Builder Knowledge `knowledge_manifest_v1.yaml` with the current manifest showing `SYSTEM_INSTRUCTION_VERSION: 1.5`.
 3. Save/Update the GPT candidate.
 4. Rerun **TC-005 with exactly the same input**.
 5. Do not execute TC-006 until TC-005 passes deterministic validation.
