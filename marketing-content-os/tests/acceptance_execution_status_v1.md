@@ -8,13 +8,13 @@ GitHub project documents are the operational SSOT. Chat, model memory, temporary
 Instruction changes must include internal dry-run simulation before commit/merge: simulate affected acceptance behavior, iterate until expected pass or blocker, cap at 1,000 internal iterations, then still require real Builder rerun and validation.
 
 ## Current Gate
-Smoke gate passed. Full acceptance TC-001..TC-032 is **IN_PROGRESS**. TC-014 passed on synchronized SYSTEM_INSTRUCTION_VERSION **1.9**: Marketplace adaptation, structured product listing / consideration-conversion behavior, safe 9x9 Standard-SKU grounding, and deterministic schema behavior passed. Continue to **TC-015**.
+Smoke gate passed. Full acceptance TC-001..TC-032 is **IN_PROGRESS**. TC-015 passed on synchronized SYSTEM_INSTRUCTION_VERSION **1.9**: Formula-mode `IMAGE_PROMPT` remained blank for all rows, the 27-field row schema was not expanded, visual/template mappings were valid, and safe 9x9 Standard-SKU grounding passed. Continue to **TC-016**.
 
 ## Full Acceptance Status
 | Test range | Status | Notes |
 |---|---|---|
 | TC-001..TC-008 | COMPLETE_FOR_RANGE | TC-001 PASS_WITH_WARNING; TC-002 PASS_WITH_WARNING; TC-003 rerun PASS_WITH_WARNING; TC-004 PASS_WITH_WARNING; TC-005 v1.6 rerun PASS_WITH_WARNING; TC-006 v1.7 rerun PASS_WITH_WARNING; TC-007 PASS; TC-008 PASS_WITH_WARNING |
-| TC-009..TC-016 | IN_PROGRESS | TC-009 PASS_WITH_WARNING; TC-010 PASS_WITH_WARNING; TC-011 initial FAIL; TC-011 v1.8 rerun PASS_WITH_WARNING; TC-012 PASS_WITH_WARNING; TC-013 initial FAIL; TC-013 v1.9 rerun PASS_WITH_WARNING; TC-014 PASS_WITH_WARNING; TC-015 next |
+| TC-009..TC-016 | IN_PROGRESS | TC-009 PASS_WITH_WARNING; TC-010 PASS_WITH_WARNING; TC-011 initial FAIL; TC-011 v1.8 rerun PASS_WITH_WARNING; TC-012 PASS_WITH_WARNING; TC-013 initial FAIL; TC-013 v1.9 rerun PASS_WITH_WARNING; TC-014 PASS_WITH_WARNING; TC-015 PASS_WITH_WARNING; TC-016 next |
 | TC-017..TC-024 | PENDING | audience fit, missing inputs, invalid template, Tier-1 conflict |
 | TC-025..TC-032 | PENDING | diversity, TSV escaping, large batches, AUTO, taxonomy, lookup, manifest |
 
@@ -40,32 +40,33 @@ Smoke gate passed. Full acceptance TC-001..TC-032 is **IN_PROGRESS**. TC-014 pas
 | TC-013 initial | FAIL | 1.8 | 30 | FAIL | not release-scored | `tests/evidence/TC-013_2026-08-23_review.md` | Row 8 OBJECTIVE emitted as ` CREATE_ENGAGEMENT`; row 11 CAMPAIGN_ROLE emitted as ` AWARENESS`. MACHINE-TOKEN-001 reopened. |
 | TC-013 rerun | PASS_WITH_WARNING | 1.9 | 30 | PASS | 44/45 | `tests/evidence/TC-013_2026-08-24_rerun_v1.9_review.md` | MACHINE-TOKEN-001 regression passed. LINE OA adaptation and safe 6x6 Standard-SKU grounding passed. OUTPUT-FMT-001 and ASPECT-RATIO-001 reproduced. |
 | TC-014 | PASS_WITH_WARNING | 1.9 | 30 | PASS | 44/45 | `tests/evidence/TC-014_2026-08-24_review.md` | Marketplace adaptation and structured product listing / consideration-conversion behavior passed. Safe 9x9 Standard-SKU grounding passed. OUTPUT-FMT-001 and ASPECT-RATIO-001 reproduced. |
+| TC-015 | PASS_WITH_WARNING | 1.9 | 30 | PASS | 44/45 | `tests/evidence/TC-015_2026-08-24_review.md` | FORMULA mode passed: all IMAGE_PROMPT fields blank, schema not expanded, and visual/template mappings valid. OUTPUT-FMT-001 reproduced. |
 
 ## Latest Observations
 
-### TC-014 Observations
-- input SKU: `BK-LS-MIX-MEDIUM-01`
-- requested platform: `Marketplace`
+### TC-015 Observations
+- input SKU: `BK-UP-MIX-EXPERT-01`
+- requested platform: `Facebook`
+- requested `IMAGE_PROMPT_MODE=FORMULA`
 - SYSTEM_INSTRUCTION_VERSION: `1.9`
 - row_count_actual: 30
 - chunking: 20 + 10
 - unique_ROW_ID_count: 30
-- stable CAMPAIGN_ID: `CMP-BK-LS-MIX-MEDIUM-01-MARKETPLACE-20260824`
-- PLATFORM resolved to `MARKETPLACE`
+- stable CAMPAIGN_ID: `CMP-BK-UP-MIX-EXPERT-01-FACEBOOK-20260824`
+- PLATFORM resolved to `FACEBOOK`
 - global SEQUENCE: 1..30 continuous
 - every emitted row has exactly 27 tab-delimited fields
 - controlled machine-token errors: 0
 - controlled machine-token outer whitespace observed: 0
-- IMAGE_PROMPT blank: yes
+- IMAGE_PROMPT blank: yes, all 30 rows
+- schema expansion observed: 0
 - template mappings: PASS
 - direct_sale_max_consecutive: 2
-- Marketplace adaptation: PASS
-- campaign structure: product value, consideration, listing utility, and conversion are appropriate for Marketplace
-- product grounding: 9x9 generic mixed Sudoku, มัธยมต้น, MEDIUM, 500 puzzles, answer key, Printable PDF
+- product grounding: 9x9 generic mixed Sudoku, ประถมปลาย, EXPERT, 500 puzzles, answer key, Printable PDF
 - named Standard variant composition or per-type count invention observed: 0
 - unsupported price/discount/deadline/scarcity/stock/review/award/endorsement/guarantee claims observed: 0
 - warning: OUTPUT-FMT-001 reproduced
-- warning: PRODUCT_BOX rows used `1236:2000` as ASPECT_RATIO; ASPECT-RATIO-001 reproduced
+- ASPECT-RATIO-001: not counted as newly reproduced for TC-015 because Facebook portrait rows use `4:5` with `1080x1350 px`, including PRODUCT_BOX
 - deterministic/structural gate: PASS
 - result: PASS_WITH_WARNING
 
@@ -74,7 +75,7 @@ Smoke gate passed. Full acceptance TC-001..TC-032 is **IN_PROGRESS**. TC-014 pas
 ### MACHINE-TOKEN-001 — Controlled field emitted with outer whitespace
 - Status: **RESOLVED / REGRESSION PASSED on v1.9 / MONITOR**.
 - Earlier recurrence: TC-013 v1.8 row 8 `OBJECTIVE= CREATE_ENGAGEMENT`; row 11 `CAMPAIGN_ROLE= AWARENESS`.
-- v1.9 reruns: no leading/trailing whitespace observed in controlled machine-token fields through TC-014.
+- v1.9 reruns: no leading/trailing whitespace observed in controlled machine-token fields through TC-015.
 
 ### OVERRIDE-SAFETY-001 — Unsafe optional override stops valid base generation
 - Status: **RESOLVED / REGRESSION PASSED on v1.8**.
@@ -82,12 +83,13 @@ Smoke gate passed. Full acceptance TC-001..TC-032 is **IN_PROGRESS**. TC-014 pas
 ### ASPECT-RATIO-001 — Product-box aspect ratio token inconsistent with prior convention
 - Status: **OPEN / NON-BLOCKING WARNING / MONITOR**.
 - TC-011, TC-012, TC-013 initial, TC-013 v1.9 rerun, and TC-014 PRODUCT_BOX rows used `1236:2000` in ASPECT_RATIO.
+- TC-015 did not newly reproduce this warning because Facebook portrait rows used `4:5` and `1080x1350 px`.
 
 ### MACHINE-TOKEN-002 — Controlled token from wrong taxonomy column
 - Status: **RESOLVED / REGRESSION PASSED on v1.7**.
 
 ### OUTPUT-FMT-001 — Empty Markdown code fence
-- Status: **OPEN / REPRODUCED THROUGH TC-014 / NON-BLOCKING by itself**.
+- Status: **OPEN / REPRODUCED THROUGH TC-015 / NON-BLOCKING by itself**.
 - Must be resolved/regression-tested before Production v1.0.
 
 ### SELF-CHECK-001 — Self-check/post-output correction weakness
@@ -106,4 +108,4 @@ For future GPT instruction edits, maintainers must mentally simulate affected ac
 Do not freeze GPT #1 row contract or release Production v1.0 until TC-001..TC-032 satisfy the acceptance rubric with no unresolved hard failures and complete evidence. GPT #2 remains HOLD until GPT #1 acceptance/freeze is complete and GPT #2's own acceptance corpus passes.
 
 ## Immediate Next Action
-Execute **TC-015** from `campaign_content_generator_acceptance_corpus_v1.tsv` against the synchronized v1.9 candidate. Preserve raw response, verify Formula-mode IMAGE_PROMPT remains blank and prompt-template IDs/mappings are valid, then write the result back to this SSOT before advancing.
+Execute **TC-016** from `campaign_content_generator_acceptance_corpus_v1.tsv` against the synchronized v1.9 candidate. Preserve raw response, verify the 100% Product Hero visual mix override is handled safely and template mappings remain valid, then write the result back to this SSOT before advancing.
