@@ -17,9 +17,9 @@
 Use the complete contents of:
 `marketing-content-os/gpt/campaign_content_generator/system_instructions_v1.md`
 
-Do not duplicate SKU-specific facts inside GPT Instructions.
+This file is the canonical Campaign Generator instruction text. Do not copy SKU-specific facts into the instruction body.
 
-## Recommended Knowledge Upload Set
+## Required Knowledge Upload Set
 ### Product / Marketing Truth
 1. `marketing-plan/sku/sku_source_of_truth.md`
 2. `marketing-plan/sku/sku_marketing_plan_matrix.csv`
@@ -43,11 +43,14 @@ Do not duplicate SKU-specific facts inside GPT Instructions.
 
 ### Schemas / Prompt System
 18. `marketing-content-os/schemas/content_row_schema.tsv`
-19. `marketing-content-os/schemas/sku_lookup_schema.tsv`
-20. `marketing-content-os/templates/prompt_template_registry_v1.tsv`
-21. `marketing-content-os/templates/image_prompt_template_v1.txt`
-22. `marketing-content-os/templates/google_sheets_formula_notes.md`
-23. `marketing-content-os/knowledge_manifest_v1.yaml`
+19. `marketing-content-os/schemas/sku_lookup_v1.tsv`
+20. `marketing-content-os/schemas/controlled_vocabulary_v1.tsv`
+21. `marketing-content-os/templates/prompt_template_registry_v1.tsv`
+22. `marketing-content-os/templates/image_prompt_template_v1.txt`
+23. `marketing-content-os/templates/google_sheets_formula_notes.md`
+24. `marketing-content-os/knowledge_manifest_v1.yaml`
+
+`sku_lookup_schema.tsv` is documentation of the schema only. The GPT Builder candidate must use the populated `sku_lookup_v1.tsv` as the canonical lookup dataset.
 
 ## Conversation Starters
 Use the four starters in `conversation_starters_v1.md`.
