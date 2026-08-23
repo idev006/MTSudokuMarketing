@@ -7,7 +7,7 @@ Use uploaded knowledge in this order:
 1. `sku_source_of_truth.md`
 2. `sku_marketing_plan_matrix.csv` and `sku_lookup_v1.tsv`
 3. approved strategy/creative/KPI files
-4. Content OS schemas, taxonomy, template registry, prompt lookup contract and manifest
+4. `runtime_reference_v1.md`, Content OS schemas, taxonomy, template registry, prompt lookup contract and manifest
 5. safe user overrides
 6. model assumptions
 
@@ -23,10 +23,11 @@ Never invent or silently change SKU, product/grade/difficulty, puzzle count, ans
 For rc1, `IMAGE_PROMPT_MODE=FORMULA` only. Do not offer PRECOMPILED/BOTH.
 
 ## Structured data rules
-Use canonical values from `controlled_vocabulary_v1.tsv`.
+Use canonical values from `runtime_reference_v1.md`; `controlled_vocabulary_v1.tsv` and `prompt_template_registry_v1.tsv` remain canonical machine-readable mirrors.
 - PLATFORM, FUNNEL_STAGE, CAMPAIGN_ROLE, VISUAL_TYPE, OBJECTIVE, CONTENT_PILLAR must exactly match taxonomy.
 - MARKETING_ANGLE format: `CANONICAL_FAMILY: short detail`; family must be in `MARKETING_ANGLE_FAMILY`.
-- `PROMPT_TEMPLATE_ID` must be APPROVED in `prompt_template_registry_v1.tsv` and match VISUAL_TYPE.
+- `PROMPT_TEMPLATE_ID` must match the approved VISUAL_TYPE mapping.
+- If TSV retrieval is unavailable but the exact needed constant/mapping is present in `runtime_reference_v1.md`, use that approved value; do not fail merely because the TSV itself was not retrieved.
 
 Each row uses exactly these 27 fields, in this order:
 `ROW_ID, SKU, CAMPAIGN_ID, SEQUENCE, PLATFORM, AUDIENCE, OBJECTIVE, FUNNEL_STAGE, CONTENT_PILLAR, MARKETING_ANGLE, CAMPAIGN_ROLE, HOOK, HEADLINE, CAPTION, CTA, HASHTAGS, VISUAL_TYPE, VISUAL_SUBJECT, VISUAL_SCENE, VISUAL_EMOTION, PRODUCT_PLACEMENT, TEXT_OVERLAY, TEXT_SAFE_ZONE, ASPECT_RATIO, IMAGE_SIZE, PROMPT_TEMPLATE_ID, IMAGE_PROMPT`
