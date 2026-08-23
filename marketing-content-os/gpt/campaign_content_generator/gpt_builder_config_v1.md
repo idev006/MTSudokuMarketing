@@ -21,8 +21,8 @@ This compact file is the **canonical runtime Instructions** for GPT Builder and 
 
 Do NOT paste `system_instructions_full_reference_v1.md` into GPT Builder. That file is maintainer/reference documentation only.
 
-## Exact rc1 Knowledge Upload Bundle — 17 files
-Keep the deployment bundle below the Custom GPT knowledge-file limit. `runtime_reference_v1.md` is a retrieval-friendly mirror of critical taxonomy/template constants and is intentionally included to make GPT Builder retrieval more reliable.
+## Exact rc1 Knowledge Upload Bundle — 19 files
+Keep the deployment bundle below the Custom GPT knowledge-file limit. Retrieval-friendly Markdown mirrors are included for critical runtime constants and SKU content details because structured TSV retrieval may be incomplete in GPT Builder.
 
 ### Product / Marketing Truth — 8 files
 1. `marketing-plan/sku/sku_source_of_truth.md`
@@ -34,18 +34,25 @@ Keep the deployment bundle below the Custom GPT knowledge-file limit. `runtime_r
 7. `marketing-plan/creative/asset_format_spec.md`
 8. `marketing-plan/measurement/kpi_framework.md`
 
-### Content / Prompt Data — 9 files
+### Content / Prompt Data — 11 files
 9. `marketing-content-os/schemas/content_row_schema.tsv`
 10. `marketing-content-os/schemas/sku_lookup_v1.tsv`
-11. `marketing-content-os/schemas/controlled_vocabulary_v1.tsv`
-12. `marketing-content-os/templates/prompt_template_registry_v1.tsv`
-13. `marketing-content-os/templates/image_prompt_template_v1.txt`
-14. `marketing-content-os/templates/google_sheets_formula_notes.md`
-15. `marketing-content-os/docs/17_prompt_lookup_contract.md`
-16. `marketing-content-os/knowledge_manifest_v1.yaml`
-17. `marketing-content-os/gpt/campaign_content_generator/runtime_reference_v1.md`
+11. `marketing-content-os/schemas/sku_content_spec_v1.tsv`
+12. `marketing-content-os/schemas/controlled_vocabulary_v1.tsv`
+13. `marketing-content-os/templates/prompt_template_registry_v1.tsv`
+14. `marketing-content-os/templates/image_prompt_template_v1.txt`
+15. `marketing-content-os/templates/google_sheets_formula_notes.md`
+16. `marketing-content-os/docs/17_prompt_lookup_contract.md`
+17. `marketing-content-os/knowledge_manifest_v1.yaml`
+18. `marketing-content-os/gpt/campaign_content_generator/runtime_reference_v1.md`
+19. `marketing-content-os/gpt/campaign_content_generator/sku_content_reference_v1.md`
 
-`runtime_reference_v1.md` does not replace canonical product truth. It provides approved canonical taxonomy, visual-template mappings and row order when TSV retrieval is unavailable.
+`runtime_reference_v1.md` mirrors canonical taxonomy/template mappings. `sku_content_reference_v1.md` mirrors the canonical SKU content-spec claim policy for retrieval reliability. Neither may override higher-priority product truth.
+
+## Product-detail grounding
+- Use `sku_content_spec_v1.tsv` / `sku_content_reference_v1.md` for grid size and content-detail claims.
+- `VARIANT_SCOPE` is a program universe, not proof every Standard SKU contains every named variant.
+- When `EXACT_COMPOSITION_STATUS=UNSPECIFIED`, use approved grid size + generic mixed-Sudoku wording only; do not invent named variants, ratios, or per-type counts.
 
 ## Files NOT Uploaded as rc1 Knowledge
 These remain governance/developer documentation:
