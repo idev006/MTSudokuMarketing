@@ -1,6 +1,6 @@
 # 22 — GPT Definitions and Instruction Locations
 
-เอกสารนี้เป็นแผนที่กลางสำหรับค้นหา GPT definitions, Instructions และ Builder configuration ของ BiiigBee Marketing Content OS
+เอกสารนี้เป็นแผนที่กลางสำหรับค้นหา GPT definitions, Instructions, Builder configuration และ release checklist ของ BiiigBee Marketing Content OS
 
 ## GPT #1 — BiiigBee Campaign Content Generator
 สถานะ: **v1.0-rc1 / Candidate / Acceptance Testing Required**
@@ -14,11 +14,10 @@
 `marketing-content-os/gpt/campaign_content_generator/gpt_builder_config_v1.md`
 
 ประกอบด้วย:
-- Name
-- Description
+- Name / Description
 - Intended users
-- Required knowledge upload files
-- capabilities
+- exact rc1 Knowledge Upload Bundle = 16 files
+- capabilities สำหรับ acceptance
 - default mode
 - AUTO platform behavior
 - Formula-only image prompt behavior
@@ -32,6 +31,11 @@
 
 ### General / Advanced Interaction Flow
 `marketing-content-os/gpt/campaign_content_generator/interaction_flow_v1.md`
+
+### Pre-Creation Checklist
+`marketing-content-os/gpt/PRE_CREATION_CHECKLIST_v1.md`
+
+ใช้ checklist นี้ก่อนนำค่าไปกรอกใน GPT Builder และก่อนเริ่ม smoke test
 
 ---
 
@@ -47,14 +51,14 @@
 ### Conversation Starters
 `marketing-content-os/gpt/visual_prompt_refiner/conversation_starters_v1.md`
 
-GPT #2 ใช้สำหรับ refine visual execution จาก approved content row เท่านั้น ห้ามเปลี่ยน SKU truth, audience, objective, campaign role หรือ claim policy
+GPT #2 ใช้ refine visual execution จาก approved content row เท่านั้น ห้ามเปลี่ยน SKU truth, audience, objective, campaign role หรือ claim policy
 
 ---
 
 ## GPT Builder Setup Guide
 `marketing-content-os/gpt/GPT_BUILDER_SETUP_GUIDE.md`
 
-ใช้เป็น checklist ในการสร้าง Custom GPT จริง รวมถึงไฟล์ knowledge ที่ต้อง upload
+ใช้เป็น step-by-step guide ในการสร้าง Custom GPT จริง
 
 ## GPT Documentation Index
 `marketing-content-os/gpt/README.md`
@@ -64,10 +68,17 @@ GPT #2 ใช้สำหรับ refine visual execution จาก approved co
 
 มีข้อมูล lookup ของ 24 SKU สำหรับ product-owned prompt placeholders และ deterministic validation
 
+## Canonical Machine Taxonomy
+`marketing-content-os/schemas/controlled_vocabulary_v1.tsv`
+
+ครอบคลุม FUNNEL_STAGE, CAMPAIGN_ROLE, VISUAL_TYPE, PLATFORM, OBJECTIVE, CONTENT_PILLAR และ MARKETING_ANGLE_FAMILY
+
 ## Acceptance / Validation
 - `marketing-content-os/tests/campaign_content_generator_acceptance_corpus_v1.tsv`
 - `marketing-content-os/tests/acceptance_execution_rubric_v1.md`
 - `marketing-content-os/tools/validate_campaign_output.py`
 
+Validator ต้องตรวจ controlled fields ทั้งหมดและนับ marketing-angle concentration จาก canonical family ก่อน `:`
+
 ## Governance
-GitHub files above are the documented source for GPT configuration. Do not maintain undocumented alternative Instructions directly in GPT Builder. Any material Builder change must first be reflected in GitHub and versioned/retested.
+GitHub files aboveเป็น documented source สำหรับ GPT configuration. ห้าม maintain undocumented alternative Instructions โดยแก้เฉพาะใน GPT Builder. Material Builder change ต้องเริ่มจาก GitHub, version/rebuild และ retest ก่อนเสมอ
