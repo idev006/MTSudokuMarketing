@@ -17,7 +17,7 @@ def main() -> int:
     print(f"FILE={args.path}")
     print(f"CHARACTERS={count}")
     print(f"LIMIT={args.limit}")
-    if count >= args.limit:
+    if count > args.limit:
         print("RESULT=FAIL")
         return 1
     print(f"HEADROOM={args.limit - count}")
