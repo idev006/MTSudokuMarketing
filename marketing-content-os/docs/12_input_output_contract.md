@@ -1,4 +1,4 @@
-# 12 — Final Input / Output Contract
+# 12 — Final Input / Output Contract v1
 
 ## General Mode — Minimum Input
 Required:
@@ -7,35 +7,29 @@ Required:
 
 Optional:
 - `PLATFORM` (default `AUTO`)
-- `CAMPAIGN_DURATION` (default inferred from row count)
+- `CAMPAIGN_DURATION` (default `AUTO`)
 - `CAMPAIGN_GOAL` (default `AUTO`)
 
-General Mode must not force the user to answer a long marketing questionnaire. The engine infers audience mix, funnel mix, content pillars, angles, CTA distribution, visual diversity, campaign sequence, and sell/value balance from the Marketing Plan.
+General Mode must not force a long marketing questionnaire. The engine infers audience mix, funnel mix, content pillars, angles, CTA distribution, visual diversity, campaign sequence, and sell/value balance from approved Marketing Plan data.
+
+### AUTO Rules
+- `PLATFORM=AUTO` resolves to one primary canonical output platform for the campaign.
+- Multi-platform campaigns require Advanced Mode `PLATFORM_MIX`.
+- `CAMPAIGN_DURATION=AUTO` uses channel/cadence/campaign defaults; it must not assume one content row equals one day.
 
 ## Advanced Mode — Override Layer
-Uses the same engine as General Mode and may override:
-- `CAMPAIGN_GOAL`
-- `CAMPAIGN_THEME`
-- `AUDIENCE_MIX`
-- `FUNNEL_MIX`
-- `CONTENT_PILLAR_MIX`
-- `PLATFORM_MIX`
-- `MARKETING_ANGLE_PREFERENCES`
-- `FORBIDDEN_ANGLES`
-- `CTA_STYLE`
-- `PROMOTION`
-- `VISUAL_MIX`
-- `TONE`
-- `POSTING_CADENCE`
-- `ASPECT_RATIO`
-- `PREVIOUS_CAMPAIGN_CONTEXT`
-- `IMAGE_PROMPT_MODE`
+Uses the same engine and may override campaign goal/theme, audience/funnel/content-pillar mix, platform mix, angle preferences/forbidden angles, CTA style, promotion, visual mix, tone, posting cadence, aspect ratio, and previous campaign context.
 
-Overrides may not contradict product facts or claim-safety rules.
+Overrides may not contradict product truth or claim-safety rules.
+
+## IMAGE_PROMPT_MODE v1
+Supported value:
+- `FORMULA`
+
+`PRECOMPILED` and `BOTH` are not active v1 modes and require a future contract/version.
 
 ## Output Row Contract
-Each row is one complete Marketing Content Unit with these fields in this order:
-
+Each row is one Marketing Content Unit with fields in exactly this order:
 1. `ROW_ID`
 2. `SKU`
 3. `CAMPAIGN_ID`
@@ -64,20 +58,53 @@ Each row is one complete Marketing Content Unit with these fields in this order:
 26. `PROMPT_TEMPLATE_ID`
 27. `IMAGE_PROMPT`
 
-## Deterministic Output Rules
-- Output row count must equal `NUMBER_OF_ROWS` exactly.
-- `ROW_ID` must be unique within the batch.
-- `CAMPAIGN_ID` must be stable across rows in the same campaign.
-- `SEQUENCE` must be unique and continuous from 1..N.
-- `SKU` must be valid in source of truth.
-- Required fields may not be blank except where explicitly allowed.
-- `IMAGE_PROMPT` must be the final field and blank by default in formula mode.
-- No extra columns without explicit schema version change.
+## Structured-Field Rules
+Controlled fields must use canonical values from `docs/16_controlled_vocabulary.md` / machine-readable taxonomy. `AUTO` is an input state and must be resolved before row output.
 
-## File Output
-Primary v1 export:
-1. `CONTENT ROWS` as TSV
-2. `IMAGE PROMPT TEMPLATES`
-3. `PROMPT ASSEMBLY` guidance
+## Deterministic Row Rules
+- total output rows = `NUMBER_OF_ROWS` exactly
+- unique `ROW_ID`
+- stable `CAMPAIGN_ID` within one campaign
+- `SEQUENCE` exactly 1..N
+- valid SKU on every row
+- required fields nonblank except explicitly allowed
+- `PROMPT_TEMPLATE_ID` must exist in approved registry
+- `VISUAL_TYPE` and template family must be compatible
+- `IMAGE_PROMPT` is the final field and blank in Formula Mode
+- no extra columns without a schema-version change
 
-Future compatible exports may include CSV and JSON, but must preserve the same semantic field contract.
+## Product Metadata / Prompt Assembly
+The 27-row schema does not duplicate stable product metadata solely for prompt construction. Final prompt assembly uses:
+
+`Content Row + SKU Lookup + Prompt Template`.
+
+SKU lookup supplies product-owned placeholders such as brand/product name, grade band, display difficulty and format.
+
+## Metadata Header
+A batch/package carries version/provenance metadata outside the 27-row schema:
+- CONTENT_OS_VERSION
+- ROW_SCHEMA_VERSION
+- TAXONOMY_VERSION
+- PROMPT_TEMPLATE_VERSION
+- MARKETING_PLAN_REF
+- GENERATION_STATUS
+
+Values come from the explicit knowledge/version manifest; Git references must never be invented.
+
+## TSV Serialization
+Section 1 follows `docs/19_tsv_serialization_contract.md`: one physical line per row, exactly 27 tab-separated fields, embedded tabs replaced with spaces, embedded physical newlines serialized as literal `\n`, and CR removed.
+
+## Large Batches
+- N <= 20: one part
+- N > 20: chunks of at most 20 rows
+
+The complete campaign must be planned before chunking. Across chunks, CAMPAIGN_ID stays stable, ROW_ID stays globally unique and SEQUENCE remains globally continuous. Total rows across all parts must equal N exactly.
+
+## File / Text Output
+Primary v1 package:
+1. metadata/provenance header
+2. `CONTENT ROWS` as TSV
+3. `USED IMAGE PROMPT TEMPLATES`
+4. `PROMPT ASSEMBLY` guidance
+
+Future CSV/JSON exports may be added only if they preserve the same semantic contract and versioning rules.
