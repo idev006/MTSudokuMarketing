@@ -8,20 +8,20 @@ GitHub project documents are the operational SSOT. Chat, model memory, temporary
 Instruction changes must include internal dry-run simulation before commit/merge: simulate affected acceptance behavior, iterate until expected pass or blocker, cap at 1,000 internal iterations, then still require real Builder rerun and validation.
 
 ## Current Gate
-Smoke gate passed. Full acceptance TC-001..TC-032 is **BLOCKED_AT_TC023**.
+Smoke gate passed. Full acceptance TC-001..TC-032 is **BLOCKED_AT_TC023_RERUN_REQUIRED**.
 
 TC-022 rerun passed on synchronized SYSTEM_INSTRUCTION_VERSION **1.10**: missing `SKU` failed safely with zero generated rows and asked only for `SKU`. `MISSING-INPUT-001` is resolved / regression passed on v1.10.
 
 TC-023 failed on SYSTEM_INSTRUCTION_VERSION **1.10**. The input used `FORCE_PROMPT_TEMPLATE_ID=IMG-UNKNOWN-V1`. The acceptance corpus marks TC-023 as `PASS_WITH_REJECTED_OVERRIDE` and expects the unknown template to be rejected while a registered safe template is selected. Actual behavior rejected the template but stopped with zero generated rows.
 
-Do not advance to TC-024 until GPT #1 Instructions are patched so unknown forced template overrides are rejected while safe generation continues, the manifest version is updated, and TC-023 rerun passes.
+Mitigation has been patched in SYSTEM_INSTRUCTION_VERSION **1.11** and `knowledge_manifest_v1.yaml` was updated. v1.11 treats unknown `FORCE_PROMPT_TEMPLATE_ID` as a rejected optional override when SKU and required inputs are otherwise valid; generation must continue using normal `VISUAL_TYPE -> PROMPT_TEMPLATE_ID` mapping. TC-023 must be rerun before advancing to TC-024.
 
 ## Full Acceptance Status
 | Test range | Status | Notes |
 |---|---|---|
 | TC-001..TC-008 | COMPLETE_FOR_RANGE | TC-001 PASS_WITH_WARNING; TC-002 PASS_WITH_WARNING; TC-003 rerun PASS_WITH_WARNING; TC-004 PASS_WITH_WARNING; TC-005 v1.6 rerun PASS_WITH_WARNING; TC-006 v1.7 rerun PASS_WITH_WARNING; TC-007 PASS; TC-008 PASS_WITH_WARNING |
 | TC-009..TC-016 | COMPLETE_FOR_RANGE | TC-009 PASS_WITH_WARNING; TC-010 PASS_WITH_WARNING; TC-011 initial FAIL; TC-011 v1.8 rerun PASS_WITH_WARNING; TC-012 PASS_WITH_WARNING; TC-013 initial FAIL; TC-013 v1.9 rerun PASS_WITH_WARNING; TC-014 PASS_WITH_WARNING; TC-015 PASS_WITH_WARNING; TC-016 PASS_WITH_WARNING |
-| TC-017..TC-024 | BLOCKED_AT_TC023 | TC-017 PASS_WITH_WARNING; TC-018 PASS_WITH_WARNING; TC-019 PASS_WITH_WARNING; TC-020 PASS_WITH_WARNING; TC-021 PASS; TC-022 initial FAIL; TC-022 v1.10 rerun PASS; TC-023 FAIL; TC-023 mitigation/rerun required before TC-024 |
+| TC-017..TC-024 | BLOCKED_AT_TC023_RERUN_REQUIRED | TC-017 PASS_WITH_WARNING; TC-018 PASS_WITH_WARNING; TC-019 PASS_WITH_WARNING; TC-020 PASS_WITH_WARNING; TC-021 PASS; TC-022 initial FAIL; TC-022 v1.10 rerun PASS; TC-023 FAIL; v1.11 patch applied; TC-023 rerun required before TC-024 |
 | TC-025..TC-032 | PENDING | diversity, TSV escaping, large batches, AUTO, taxonomy, lookup, manifest |
 
 ## Per-Test Evidence Record
@@ -59,6 +59,13 @@ Do not advance to TC-024 until GPT #1 Instructions are patched so unknown forced
 
 ## Latest Observations
 
+### v1.11 Patch Notes
+- Affected defect: TEMPLATE-OVERRIDE-001.
+- Instruction file updated to SYSTEM_INSTRUCTION_VERSION `1.11`.
+- Manifest updated to SYSTEM_INSTRUCTION_VERSION `1.11`.
+- Internal dry-run preflight: for TC-023 input, expected v1.11 behavior is to reject `IMG-UNKNOWN-V1` outside TSV, generate exactly 10 rows for `BK-UP-MIX-HARD-01`, never emit unknown template ID, keep `IMAGE_PROMPT` blank, and use registered VISUAL_TYPE -> PROMPT_TEMPLATE_ID mapping for every row.
+- Live GPT Builder rerun remains required before TC-023 can be marked resolved.
+
 ### TC-023 Observations
 - input SKU: `BK-UP-MIX-HARD-01`
 - requested rows: 10
@@ -75,12 +82,12 @@ Do not advance to TC-024 until GPT #1 Instructions are patched so unknown forced
 ## Acceptance Defects
 
 ### TEMPLATE-OVERRIDE-001 — Unknown forced prompt template stops generation instead of safe continuation
-- Status: **OPEN / BLOCKING**.
+- Status: **PATCHED IN v1.11 / RERUN REQUIRED**.
 - Trigger: TC-023.
 - Expected: reject `FORCE_PROMPT_TEMPLATE_ID=IMG-UNKNOWN-V1`, do not emit it, continue generation using valid VISUAL_TYPE -> PROMPT_TEMPLATE_ID mapping.
-- Actual: validation error and zero generated rows.
-- Required mitigation: update GPT #1 Instructions to treat unknown forced prompt-template overrides as rejected optional overrides when SKU and required inputs are otherwise valid.
-- Required rerun: TC-023 after instruction/manifest version update.
+- Actual on v1.10: validation error and zero generated rows.
+- Mitigation: v1.11 treats unknown forced prompt-template override as a rejected optional override when SKU and required inputs are otherwise valid.
+- Required rerun: TC-023 on v1.11.
 
 ### MISSING-INPUT-001 — Missing SKU incorrectly inferred from prior context
 - Status: **RESOLVED / REGRESSION PASSED on v1.10 / MONITOR**.
@@ -117,4 +124,4 @@ For future GPT instruction edits, maintainers must mentally simulate affected ac
 Do not freeze GPT #1 row contract or release Production v1.0 until TC-001..TC-032 satisfy the acceptance rubric with no unresolved hard failures and complete evidence. GPT #2 remains HOLD until GPT #1 acceptance/freeze is complete and GPT #2's own acceptance corpus passes.
 
 ## Immediate Next Action
-Patch GPT #1 Instructions so unknown forced prompt-template overrides are rejected while safe generation continues, update `knowledge_manifest_v1.yaml` to the new instruction version, then rerun **TC-023**. Do not advance to TC-024 until TC-023 passes.
+Sync GPT Builder to SYSTEM_INSTRUCTION_VERSION **1.11**, update `knowledge_manifest_v1.yaml`, then rerun **TC-023**. Do not advance to TC-024 until TC-023 passes.
