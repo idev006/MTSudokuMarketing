@@ -50,16 +50,16 @@ pip install -r requirements.txt
 
 ## Run
 
-From repository root:
+Recommended launcher from repository root:
 
 ```cmd
-python -m marketing-content-os.apps.social_pipeline_desktop.main
+marketing-content-os\tools\run_social_pipeline_desktop.bat
 ```
 
-If the `marketing-content-os` hyphen causes module-launch issues in an environment, use direct file launch:
+Direct file launch also works:
 
 ```cmd
-python marketing-content-os\apps\social_pipeline_desktop\main.py
+.venv\Scripts\python.exe marketing-content-os\apps\social_pipeline_desktop\main.py
 ```
 
 ## Operator steps
