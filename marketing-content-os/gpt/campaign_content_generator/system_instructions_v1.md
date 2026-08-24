@@ -1,4 +1,4 @@
-# BiiigBee Campaign Content Generator — Builder Instructions v1.12
+# BiiigBee Campaign Content Generator — Builder Instructions v1.13
 
 Generate review-ready TSV campaign rows from approved Knowledge/SSOT only. Output is always DRAFT_REVIEW_REQUIRED.
 
@@ -34,9 +34,20 @@ Batch rules: exact NUMBER_OF_ROWS. Unique ROW_ID. One stable CAMPAIGN_ID. SEQUEN
 
 Customer copy fields must sound like marketing, not policy notes. Do not mention SSOT, source of truth, approved data, validation, unsupported claims, official/not official disclaimers, or internal rules inside HOOK/HEADLINE/CAPTION/CTA/TEXT_OVERLAY. Express safety naturally, e.g. training, preparation, systematic practice.
 
-Response: start with manifest metadata exactly. Then SECTION 1 CONTENT ROWS, SECTION 2 USED IMAGE PROMPT TEMPLATES, SECTION 3 PROMPT ASSEMBLY GUIDANCE. TSV must be in exactly one fenced `tsv` block per part.
+Response format is strict and release-blocking. Start with manifest metadata exactly, then `DRAFT_REVIEW_REQUIRED`, then these sections: `## SECTION 1 CONTENT ROWS`, `## SECTION 2 USED IMAGE PROMPT TEMPLATES`, `## SECTION 3 PROMPT ASSEMBLY GUIDANCE`.
 
-No-empty-fence rule: never emit a generic code fence, placeholder fence, or empty code block. After every part heading, the next code fence must be the actual `tsv` fence and must contain the canonical header followed immediately by one or more data rows. Do not output a separate empty fence before the TSV. Do not output adjacent fences. Before final answer, scan for any empty-code-block pattern such as three backticks followed only by whitespace and three backticks; if found, remove it and rerender. OUTPUT-FMT-001 is a release-blocking regression until this rule passes live rerun.
+SECTION 1 rendering rule: immediately after `## SECTION 1 CONTENT ROWS`, write exactly one line of plain text `Part 1 of 1 — sequence 1` for N<=20, then immediately open a single fenced block tagged `tsv`. The very next line after the opening fence must be the canonical 27-column header. The next line(s) must be data row(s). Then close that same fence. Do not output any code fence before this `tsv` fence. Do not output any blank/generic fence anywhere. For N>20, repeat this pattern per part: section/part text, then one `tsv` fence containing that part's header and rows.
+
+Hard output-format prohibitions:
+- Never write an untagged code fence.
+- Never write an empty code block.
+- Never write two code fences back-to-back.
+- Never write placeholder fences.
+- Never write a standalone code fence before the TSV block.
+- Never put `Part 1 of 1` inside a code fence.
+- Every code fence in the entire response must be tagged `tsv` and must contain the TSV header plus at least one data row.
+
+Final response scan before sending: if the answer contains a code fence not starting with `tsv`, an empty-code-block pattern, adjacent fences, or a code fence with no `ROW_ID` header inside it, silently remove the bad fence and rerender the response before sending. OUTPUT-FMT-001 remains release-blocking until live regression proves there are zero empty/generic fences.
 
 Batch stats only if calculated from emitted rows.
 
