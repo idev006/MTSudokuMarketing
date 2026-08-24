@@ -8,11 +8,15 @@ GitHub project documents are the operational SSOT. Chat, model memory, temporary
 Instruction changes must include internal dry-run simulation before commit/merge: simulate affected acceptance behavior, iterate until expected pass or blocker, cap at 1,000 internal iterations, then still require real GPT Builder rerun and validation.
 
 ## Current Gate
-Smoke gate passed. Full acceptance TC-001..TC-032 is **IN_PROGRESS**.
+Smoke gate passed. Full acceptance TC-001..TC-032 is **EXECUTED_COMPLETE_WITH_WARNINGS**.
 
-TC-028 passed with warning on synchronized SYSTEM_INSTRUCTION_VERSION **1.11**. `PLATFORM=AUTO` resolved to one canonical platform (`FACEBOOK`) across all 20 rows. No row kept `AUTO` in the PLATFORM field. Product grounding, template mapping, 27-field schema, sequence, and blank `IMAGE_PROMPT` behavior passed. OUTPUT-FMT-001 remains reproduced and non-blocking by itself.
+GPT #1 remains **CANDIDATE / NOT PRODUCTION** until v1.12 focused regression is run and recorded. The 27-field row contract is stable for GPT #2 preparation, but production freeze waits for format cleanup.
 
-Continue to **TC-029**. Do not advance to TC-030 until TC-029 is executed and recorded.
+## Current Version Position
+- Last accepted live GPT Builder version: **SYSTEM_INSTRUCTION_VERSION 1.11**.
+- Patch prepared in repo: **SYSTEM_INSTRUCTION_VERSION 1.12**.
+- v1.12 purpose: close `OUTPUT-FMT-001` by forbidding empty/generic/placeholder code fences and requiring exactly one fenced `tsv` block per part.
+- v1.12 live rerun status: **REQUIRED**.
 
 ## Full Acceptance Status
 | Test range | Status | Notes |
@@ -20,7 +24,7 @@ Continue to **TC-029**. Do not advance to TC-030 until TC-029 is executed and re
 | TC-001..TC-008 | COMPLETE_FOR_RANGE | TC-001 PASS_WITH_WARNING; TC-002 PASS_WITH_WARNING; TC-003 rerun PASS_WITH_WARNING; TC-004 PASS_WITH_WARNING; TC-005 v1.6 rerun PASS_WITH_WARNING; TC-006 v1.7 rerun PASS_WITH_WARNING; TC-007 PASS; TC-008 PASS_WITH_WARNING |
 | TC-009..TC-016 | COMPLETE_FOR_RANGE | TC-009 PASS_WITH_WARNING; TC-010 PASS_WITH_WARNING; TC-011 initial FAIL; TC-011 v1.8 rerun PASS_WITH_WARNING; TC-012 PASS_WITH_WARNING; TC-013 initial FAIL; TC-013 v1.9 rerun PASS_WITH_WARNING; TC-014 PASS_WITH_WARNING; TC-015 PASS_WITH_WARNING; TC-016 PASS_WITH_WARNING |
 | TC-017..TC-024 | COMPLETE_FOR_RANGE | TC-017 PASS_WITH_WARNING; TC-018 PASS_WITH_WARNING; TC-019 PASS_WITH_WARNING; TC-020 PASS_WITH_WARNING; TC-021 PASS; TC-022 initial FAIL; TC-022 v1.10 rerun PASS; TC-023 initial FAIL; TC-023 v1.11 rerun PASS_WITH_WARNING; TC-024 PASS |
-| TC-025..TC-032 | IN_PROGRESS | TC-025 PASS_WITH_WARNING; TC-026 PASS_WITH_WARNING; TC-027 PASS_WITH_WARNING; TC-028 PASS_WITH_WARNING; TC-029 next |
+| TC-025..TC-032 | COMPLETE_FOR_RANGE | TC-025 PASS_WITH_WARNING; TC-026 PASS_WITH_WARNING; TC-027 PASS_WITH_WARNING; TC-028 PASS_WITH_WARNING; TC-029 PASS_WITH_WARNING; TC-030 PASS_WITH_WARNING; TC-031 PASS_WITH_WARNING; TC-032 PASS_WITH_WARNING |
 
 ## Per-Test Evidence Record
 | TEST_ID | RESULT | GPT/Instruction Version | Row Count | Gate | Score | Evidence | Notes |
@@ -60,29 +64,30 @@ Continue to **TC-029**. Do not advance to TC-030 until TC-029 is executed and re
 | TC-026 | PASS_WITH_WARNING | 1.11 | 5 | PASS | 44/45 | `tests/evidence/TC-026_2026-08-24_review.md` | TSV escaping passed. OUTPUT-FMT-001 reproduced. |
 | TC-027 | PASS_WITH_WARNING | 1.11 | 60 | PASS | 44/45 | `tests/evidence/TC-027_2026-08-24_review.md` | Large batch passed. OUTPUT-FMT-001 reproduced. |
 | TC-028 | PASS_WITH_WARNING | 1.11 | 20 | PASS | 44/45 | `tests/evidence/TC-028_2026-08-24_review.md` | AUTO platform resolution passed: all rows `FACEBOOK`, no row kept `AUTO`. OUTPUT-FMT-001 reproduced. |
+| TC-029 | PASS_WITH_WARNING | 1.11 | 30 | PASS | 44/45 | `tests/evidence/TC-029_2026-08-24_review.md` | CAMPAIGN_DURATION=AUTO inferred campaign arc, not 30 rows = 30 days. OUTPUT-FMT-001 reproduced. |
+| TC-030 | PASS_WITH_WARNING | 1.11 | 10 | PASS | 44/45 | `tests/evidence/TC-030_2026-08-24_review.md` | Controlled vocabulary validation passed. OUTPUT-FMT-001 reproduced. |
+| TC-031 | PASS_WITH_WARNING | 1.11 | 10 | PASS | 44/45 | `tests/evidence/TC-031_2026-08-24_review.md` | SKU lookup prompt assembly passed. OUTPUT-FMT-001 reproduced. |
+| TC-032 | PASS_WITH_WARNING | 1.11 | 10 | PASS | 44/45 | `tests/evidence/TC-032_2026-08-24_review.md` | Knowledge manifest requirement passed. OUTPUT-FMT-001 reproduced. |
 
 ## Latest Observations
 
-### TC-028 Observations
-- input SKU: `BK-UP-MIX-EASY-01`
-- requested rows: 20
-- requested platform: `AUTO`
-- requested campaign goal: `AUTO`
-- override: `AUTO_PLATFORM_RESOLUTION`
-- SYSTEM_INSTRUCTION_VERSION: `1.11`
-- row_count_actual: 20
-- stable campaign ID count: 1 (`CMP-BK-UP-MIX-EASY-01-20260824-FB`)
-- global sequence: 1..20 continuous
-- platform resolution: all rows `FACEBOOK`
-- platform AUTO leak: no row kept `AUTO`
-- expected field count: 27; all rows match
-- IMAGE_PROMPT blank: PASS
-- template mappings: PASS
-- visual families: 9; maximum visual type frequency 3/20
-- Standard-SKU product grounding: PASS; approved `9x9 mixed Sudoku` scope only, no named variant membership or per-type counts
-- deterministic/structural gate: PASS
-- warning: OUTPUT-FMT-001 reproduced
-- result: PASS_WITH_WARNING
+### Final TC-001..TC-032 Rollup
+- All acceptance tests TC-001..TC-032 have been executed.
+- No unresolved hard failure remains in the 27-field row contract.
+- Product grounding passed with Standard-SKU exact composition kept UNSPECIFIED and expressed only as approved grid + generic `mixed Sudoku`.
+- Competition safety passed after unsafe official/endorsement claims were rejected or avoided.
+- Formula Mode passed: `IMAGE_PROMPT` remained blank and prompt assembly was deferred to content row + SKU lookup + registered template.
+- Missing input isolation passed after v1.10.
+- Unknown forced template override passed after v1.11.
+- `OUTPUT-FMT-001` remains the main release cleanup item.
+
+### v1.12 Patch Notes
+- Affected defect: OUTPUT-FMT-001.
+- Patch type: format-only instruction cleanup.
+- Product truth impact: none.
+- Row schema impact: none.
+- Template mapping impact: none.
+- Required live rerun: focused format regression before Production v1.0.
 
 ## Acceptance Defects
 
@@ -105,8 +110,10 @@ Continue to **TC-029**. Do not advance to TC-030 until TC-029 is executed and re
 - Status: **RESOLVED / REGRESSION PASSED on v1.7**.
 
 ### OUTPUT-FMT-001 — Empty Markdown code fence
-- Status: **OPEN / REPRODUCED THROUGH TC-028 / NON-BLOCKING by itself**.
-- Must be resolved/regression-tested before Production v1.0.
+- Status: **OPEN / PATCHED IN v1.12 / LIVE REGRESSION REQUIRED / RELEASE-BLOCKING CLEANUP**.
+- Reproduced through TC-032 on v1.11.
+- v1.12 adds a strict no-empty-fence rule.
+- Must be resolved/regression-tested before Production v1.0 unless a deterministic post-processor mitigation is approved.
 
 ### SELF-CHECK-001 — Self-check/post-output correction weakness
 - Status: **MITIGATED / MONITOR**.
@@ -117,11 +124,45 @@ Continue to **TC-029**. Do not advance to TC-030 until TC-029 is executed and re
 ### COPY-DUP-001 — Minor exact repeated hook/CTA strings in large batch
 - Status: **OPEN / NON-BLOCKING WARNING / MONITOR**.
 
-## Instruction Authoring Dry-Run Policy
-For future GPT instruction edits, maintainers must mentally simulate affected acceptance behavior before committing. Iterate until expected pass or blocker; do not exceed 1,000 internal iterations. This simulation is preflight only and does not replace the required live GPT Builder rerun, deterministic validation, and semantic/human review.
+## v1.12 Focused Regression Plan
+Run after syncing GPT Builder Instructions and manifest to v1.12.
+
+### FMT-R001
+```text
+SKU: BK-EL-MIX-EASY-01
+NUMBER_OF_ROWS: 1
+PLATFORM: AUTO
+CAMPAIGN_GOAL: AUTO
+```
+Expected: 1 row, one `tsv` block, no empty code fence.
+
+### FMT-R002
+```text
+SKU: BK-US-MIX-EXPERT-01
+NUMBER_OF_ROWS: 60
+PLATFORM: AUTO
+CAMPAIGN_GOAL: AUTO
+LARGE_BATCH_PROTOCOL
+```
+Expected: 60 rows, 3 parts, one `tsv` block per part, no empty code fence before any part.
+
+### FMT-R003
+```text
+SKU: BK-UP-MIX-MEDIUM-01
+NUMBER_OF_ROWS: 10
+PLATFORM: AUTO
+CAMPAIGN_GOAL: AUTO
+KNOWLEDGE_MANIFEST_REQUIRED
+```
+Expected: manifest metadata preserved, 10 rows, no empty code fence.
+
+## GPT #2 Status
+GPT #2 remains **PREP READY / WAITING FOR GPT #1 v1.12 FORMAT REGRESSION**.
+
+GPT #2 activation checklist: `marketing-content-os/gpt/visual_prompt_refiner/activation_checklist_v1.md`.
 
 ## Release Rule
-Do not freeze GPT #1 row contract or release Production v1.0 until TC-001..TC-032 satisfy the acceptance rubric with no unresolved hard failures and complete evidence. GPT #2 remains HOLD until GPT #1 acceptance/freeze is complete and GPT #2's own acceptance corpus passes.
+Do not freeze GPT #1 as Production v1.0 until TC-001..TC-032 evidence is complete, v1.12 focused regression is recorded, and `OUTPUT-FMT-001` is closed or explicitly mitigated. GPT #2 can be prepared as a candidate after v1.12 focused regression passes, then must pass its own acceptance corpus before production.
 
 ## Immediate Next Action
-Execute **TC-029** from `campaign_content_generator_acceptance_corpus_v1.tsv` against the synchronized v1.11 candidate. Preserve raw response, verify `CAMPAIGN_DURATION=AUTO` does not cause the system to infer that 30 rows means 30 days, then write the result back to this SSOT before advancing.
+Sync GPT Builder to SYSTEM_INSTRUCTION_VERSION **1.12**, replace `knowledge_manifest_v1.yaml` with the v1.12 manifest, then run **FMT-R001** first. Preserve raw response and record evidence before running FMT-R002.
