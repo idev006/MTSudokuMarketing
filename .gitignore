@@ -1,0 +1,55 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python packaging/build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# Local environment and secrets
+.env
+.env.*
+*.local
+
+# IDE/editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# BiiigBee local temporary and generated workflow outputs
+marketing-content-os/tmp/
+marketing-content-os/production/social-posts/raw/
+marketing-content-os/production/social-posts/clean/
+marketing-content-os/production/social-posts/reports/
+marketing-content-os/production/social-posts/selected/
+marketing-content-os/production/social-posts/handoff/
+marketing-content-os/production/social-posts/images/
+marketing-content-os/production/social-posts/final/
+
+# Desktop app generated folder when users clean arbitrary folders
+_cleaned/
+
+# Logs
+*.log
+logs/
