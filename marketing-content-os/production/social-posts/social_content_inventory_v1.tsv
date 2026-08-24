@@ -1,0 +1,26 @@
+SKU	PRODUCT_NAME	PRODUCT_CLASS	GRADE_BAND	DISPLAY_DIFFICULTY	POSTS_REQUIRED	POSTS_PLANNED	POSTS_SELECTED	POSTS_PROMPT_READY	POSTS_IMAGE_GENERATED	POSTS_READY	PIPELINE_STAGE	NEXT_ACTION	NOTES
+BK-EL-MIX-EASY-01	ประถมต้น Mixed Sudoku Pack EASY	STANDARD	ประถมต้น	EASY	5	5	0	0	0	0	PLANNED	Run GPT1 NUMBER_OF_ROWS=10	Select best 5 rows after clean validation
+BK-EL-MIX-MEDIUM-01	ประถมต้น Mixed Sudoku Pack MEDIUM	STANDARD	ประถมต้น	MEDIUM	5	5	0	0	0	0	PLANNED	Run GPT1 NUMBER_OF_ROWS=10	Select best 5 rows after clean validation
+BK-EL-MIX-HARD-01	ประถมต้น Mixed Sudoku Pack HARD	STANDARD	ประถมต้น	HARD	5	5	0	0	0	0	PLANNED	Run GPT1 NUMBER_OF_ROWS=10	Select best 5 rows after clean validation
+BK-EL-MIX-EXPERT-01	ประถมต้น Mixed Sudoku Pack EXPERT	STANDARD	ประถมต้น	EXPERT	5	5	0	0	0	0	PLANNED	Run GPT1 NUMBER_OF_ROWS=10	Select best 5 rows after clean validation
+BK-EL-MIX-DEVIL-01	ประถมต้น Mixed Sudoku Pack DEVIL	STANDARD	ประถมต้น	GRANDMASTER	5	5	0	0	0	0	PLANNED	Run GPT1 NUMBER_OF_ROWS=10	Use user-facing GRANDMASTER where appropriate
+BK-UP-MIX-EASY-01	ประถมปลาย Mixed Sudoku Pack EASY	STANDARD	ประถมปลาย	EASY	5	5	0	0	0	0	GPT1_RAW_READY	Clean/validate user-supplied GPT1 raw output	Pilot Batch 001 source received in chat
+BK-UP-MIX-MEDIUM-01	ประถมปลาย Mixed Sudoku Pack MEDIUM	STANDARD	ประถมปลาย	MEDIUM	5	5	0	0	0	0	PLANNED	Run GPT1 NUMBER_OF_ROWS=10	Select best 5 rows after clean validation
+BK-UP-MIX-HARD-01	ประถมปลาย Mixed Sudoku Pack HARD	STANDARD	ประถมปลาย	HARD	5	5	0	0	0	0	PLANNED	Run GPT1 NUMBER_OF_ROWS=10	Select best 5 rows after clean validation
+BK-UP-MIX-EXPERT-01	ประถมปลาย Mixed Sudoku Pack EXPERT	STANDARD	ประถมปลาย	EXPERT	5	5	0	0	0	0	PLANNED	Run GPT1 NUMBER_OF_ROWS=10	Select best 5 rows after clean validation
+BK-UP-MIX-DEVIL-01	ประถมปลาย Mixed Sudoku Pack DEVIL	STANDARD	ประถมปลาย	GRANDMASTER	5	5	0	0	0	0	PLANNED	Run GPT1 NUMBER_OF_ROWS=10	Use user-facing GRANDMASTER where appropriate
+BK-LS-MIX-EASY-01	มัธยมต้น Mixed Sudoku Pack EASY	STANDARD	มัธยมต้น	EASY	5	5	0	0	0	0	PLANNED	Run GPT1 NUMBER_OF_ROWS=10	Select best 5 rows after clean validation
+BK-LS-MIX-MEDIUM-01	มัธยมต้น Mixed Sudoku Pack MEDIUM	STANDARD	มัธยมต้น	MEDIUM	5	5	0	0	0	0	PLANNED	Run GPT1 NUMBER_OF_ROWS=10	Select best 5 rows after clean validation
+BK-LS-MIX-HARD-01	มัธยมต้น Mixed Sudoku Pack HARD	STANDARD	มัธยมต้น	HARD	5	5	0	0	0	0	PLANNED	Run GPT1 NUMBER_OF_ROWS=10	Select best 5 rows after clean validation
+BK-LS-MIX-EXPERT-01	มัธยมต้น Mixed Sudoku Pack EXPERT	STANDARD	มัธยมต้น	EXPERT	5	5	0	0	0	0	PLANNED	Run GPT1 NUMBER_OF_ROWS=10	Select best 5 rows after clean validation
+BK-LS-MIX-DEVIL-01	มัธยมต้น Mixed Sudoku Pack DEVIL	STANDARD	มัธยมต้น	GRANDMASTER	5	5	0	0	0	0	PLANNED	Run GPT1 NUMBER_OF_ROWS=10	Use user-facing GRANDMASTER where appropriate
+BK-US-MIX-EASY-01	มัธยมปลาย Mixed Sudoku Pack EASY	STANDARD	มัธยมปลาย	EASY	5	5	0	0	0	0	PLANNED	Run GPT1 NUMBER_OF_ROWS=10	Select best 5 rows after clean validation
+BK-US-MIX-MEDIUM-01	มัธยมปลาย Mixed Sudoku Pack MEDIUM	STANDARD	มัธยมปลาย	MEDIUM	5	5	0	0	0	0	PLANNED	Run GPT1 NUMBER_OF_ROWS=10	Select best 5 rows after clean validation
+BK-US-MIX-HARD-01	มัธยมปลาย Mixed Sudoku Pack HARD	STANDARD	มัธยมปลาย	HARD	5	5	0	0	0	0	PLANNED	Run GPT1 NUMBER_OF_ROWS=10	Select best 5 rows after clean validation
+BK-US-MIX-EXPERT-01	มัธยมปลาย Mixed Sudoku Pack EXPERT	STANDARD	มัธยมปลาย	EXPERT	5	5	0	0	0	0	PLANNED	Run GPT1 NUMBER_OF_ROWS=10	Select best 5 rows after clean validation
+BK-US-MIX-DEVIL-01	มัธยมปลาย Mixed Sudoku Pack DEVIL	STANDARD	มัธยมปลาย	GRANDMASTER	5	5	0	0	0	0	PLANNED	Run GPT1 NUMBER_OF_ROWS=10	Use user-facing GRANDMASTER where appropriate
+CP-EL-NAT-COMP-01	ประถมต้น Competition Training Pack	COMPETITION_TRAINING	ประถมต้น	MIXED	5	5	0	0	0	0	PLANNED	Run GPT1 NUMBER_OF_ROWS=10	Training/preparation only; no official competition claims
+CP-UP-NAT-COMP-01	ประถมปลาย Competition Training Pack	COMPETITION_TRAINING	ประถมปลาย	MIXED	5	5	0	0	0	0	PLANNED	Run GPT1 NUMBER_OF_ROWS=10	Training/preparation only; no official competition claims
+CP-LS-NAT-COMP-01	มัธยมต้น Competition Training Pack	COMPETITION_TRAINING	มัธยมต้น	MIXED	5	5	0	0	0	0	PLANNED	Run GPT1 NUMBER_OF_ROWS=10	Training/preparation only; no official competition claims
+CP-US-NAT-COMP-01	มัธยมปลาย Competition Training Pack	COMPETITION_TRAINING	มัธยมปลาย	MIXED	5	5	0	0	0	0	PLANNED	Run GPT1 NUMBER_OF_ROWS=10	Training/preparation only; no official competition claims
+TOTAL	ALL APPROVED SKUS	MIXED	ALL	ALL	120	120	0	0	0	0	PLANNED	Complete SKU-by-SKU production	24 SKUs x 5 posts
