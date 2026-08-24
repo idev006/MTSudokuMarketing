@@ -5,21 +5,21 @@ This execution record is governed by `marketing-content-os/docs/00_DOCUMENT_DRIV
 
 GitHub project documents are the operational SSOT. Chat, model memory, temporary notes, generated prose, and unsynchronized GPT Builder settings are not authoritative by themselves. Every material acceptance result, blocker, mitigation, version change, and release decision must be recorded in the repository.
 
-Instruction changes must include internal dry-run simulation before commit/merge: simulate affected acceptance behavior, iterate until expected pass or blocker, cap at 1,000 internal iterations, then still require real Builder rerun and validation.
+Instruction changes must include internal dry-run simulation before commit/merge: simulate affected acceptance behavior, iterate until expected pass or blocker, cap at 1,000 internal iterations, then still require real GPT Builder rerun and validation.
 
 ## Current Gate
 Smoke gate passed. Full acceptance TC-001..TC-032 is **IN_PROGRESS**.
 
-TC-023 rerun passed on synchronized SYSTEM_INSTRUCTION_VERSION **1.11**. The unknown `FORCE_PROMPT_TEMPLATE_ID=IMG-UNKNOWN-V1` override was rejected outside TSV, generation continued, 10 rows were emitted, and every row used a registered `VISUAL_TYPE -> PROMPT_TEMPLATE_ID` mapping. `TEMPLATE-OVERRIDE-001` is resolved / regression passed on v1.11.
+TC-024 passed on synchronized SYSTEM_INSTRUCTION_VERSION **1.11**. The simulated Tier-1 target/purpose conflict failed safely with zero generated rows and no silent precedence within conflicting Tier 1.
 
-Continue to **TC-024**. Do not advance to TC-025 until TC-024 is executed and recorded.
+Continue to **TC-025**. Do not advance to TC-026 until TC-025 is executed and recorded.
 
 ## Full Acceptance Status
 | Test range | Status | Notes |
 |---|---|---|
 | TC-001..TC-008 | COMPLETE_FOR_RANGE | TC-001 PASS_WITH_WARNING; TC-002 PASS_WITH_WARNING; TC-003 rerun PASS_WITH_WARNING; TC-004 PASS_WITH_WARNING; TC-005 v1.6 rerun PASS_WITH_WARNING; TC-006 v1.7 rerun PASS_WITH_WARNING; TC-007 PASS; TC-008 PASS_WITH_WARNING |
 | TC-009..TC-016 | COMPLETE_FOR_RANGE | TC-009 PASS_WITH_WARNING; TC-010 PASS_WITH_WARNING; TC-011 initial FAIL; TC-011 v1.8 rerun PASS_WITH_WARNING; TC-012 PASS_WITH_WARNING; TC-013 initial FAIL; TC-013 v1.9 rerun PASS_WITH_WARNING; TC-014 PASS_WITH_WARNING; TC-015 PASS_WITH_WARNING; TC-016 PASS_WITH_WARNING |
-| TC-017..TC-024 | IN_PROGRESS | TC-017 PASS_WITH_WARNING; TC-018 PASS_WITH_WARNING; TC-019 PASS_WITH_WARNING; TC-020 PASS_WITH_WARNING; TC-021 PASS; TC-022 initial FAIL; TC-022 v1.10 rerun PASS; TC-023 initial FAIL; TC-023 v1.11 rerun PASS_WITH_WARNING; TC-024 next |
+| TC-017..TC-024 | COMPLETE_FOR_RANGE | TC-017 PASS_WITH_WARNING; TC-018 PASS_WITH_WARNING; TC-019 PASS_WITH_WARNING; TC-020 PASS_WITH_WARNING; TC-021 PASS; TC-022 initial FAIL; TC-022 v1.10 rerun PASS; TC-023 initial FAIL; TC-023 v1.11 rerun PASS_WITH_WARNING; TC-024 PASS |
 | TC-025..TC-032 | PENDING | diversity, TSV escaping, large batches, AUTO, taxonomy, lookup, manifest |
 
 ## Per-Test Evidence Record
@@ -55,39 +55,28 @@ Continue to **TC-024**. Do not advance to TC-025 until TC-024 is executed and re
 | TC-022 rerun | PASS | 1.10 | 0 | PASS | n/a | `tests/evidence/TC-022_2026-08-24_rerun_v1.10_review.md` | Missing `SKU` failed safely; zero rows; asked only for SKU. MISSING-INPUT-001 resolved/regression passed. |
 | TC-023 initial | FAIL | 1.10 | 0 | FAIL | not release-scored | `tests/evidence/TC-023_2026-08-24_review.md` | Unknown forced prompt template was rejected but generation stopped with zero rows. Acceptance expected rejected override plus safe registered template continuation. TEMPLATE-OVERRIDE-001 opened. |
 | TC-023 rerun | PASS_WITH_WARNING | 1.11 | 10 | PASS | 44/45 | `tests/evidence/TC-023_2026-08-24_rerun_v1.11_review.md` | Unknown forced prompt template rejected outside TSV; safe generation continued with registered template mappings. OUTPUT-FMT-001 reproduced. TEMPLATE-OVERRIDE-001 resolved/regression passed. |
+| TC-024 | PASS | 1.11 | 0 | PASS | n/a | `tests/evidence/TC-024_2026-08-24_review.md` | Simulated Tier-1 conflict failed safely; zero rows; no silent precedence within conflicting Tier 1. |
 
 ## Latest Observations
 
-### TC-023 Rerun Observations
-- input SKU: `BK-UP-MIX-HARD-01`
+### TC-024 Observations
+- input SKU: `BK-UP-MIX-MEDIUM-01`
 - requested rows: 10
-- requested platform: `Facebook`
+- requested platform: `AUTO`
 - requested campaign goal: `AUTO`
-- override: `FORCE_PROMPT_TEMPLATE_ID=IMG-UNKNOWN-V1`
+- override: `SIMULATED_TIER1_CONFLICT=target/purpose disagreement`
 - SYSTEM_INSTRUCTION_VERSION: `1.11`
-- unknown forced template rejected outside TSV: PASS
-- row_count_actual: 10
-- safe registered template continuation: PASS
-- `IMG-UNKNOWN-V1` emitted in TSV: 0
-- registered mappings used: PRODUCT_HERO, STUDENT_ACTIVITY, PARENT_CHILD, INFOGRAPHIC, BENEFIT
-- IMAGE_PROMPT blank: PASS
-- Standard-SKU product grounding: PASS; approved `9x9 mixed Sudoku` scope only, no named variant membership or per-type counts
-- deterministic/structural gate: PASS
-- result: PASS_WITH_WARNING
-
-### v1.11 Patch Notes
-- Affected defect: TEMPLATE-OVERRIDE-001.
-- Instruction file updated to SYSTEM_INSTRUCTION_VERSION `1.11`.
-- Manifest updated to SYSTEM_INSTRUCTION_VERSION `1.11`.
-- Internal dry-run preflight expected TC-023 to reject `IMG-UNKNOWN-V1` outside TSV, generate exactly 10 rows, never emit unknown template ID, keep `IMAGE_PROMPT` blank, and use registered VISUAL_TYPE -> PROMPT_TEMPLATE_ID mappings.
-- Live rerun result: PASS_WITH_WARNING.
+- expected behavior: source-data conflict reported, zero generated rows, no silent precedence within conflicting Tier 1
+- row_count_actual: 0
+- generated campaign rows observed: no
+- safe conflict failure: PASS
+- deterministic/structural gate: PASS for this expected-fail case
+- result: PASS
 
 ## Acceptance Defects
 
 ### TEMPLATE-OVERRIDE-001 — Unknown forced prompt template stops generation instead of safe continuation
 - Status: **RESOLVED / REGRESSION PASSED on v1.11 / MONITOR**.
-- Trigger: TC-023 initial.
-- v1.11 rerun: rejected `FORCE_PROMPT_TEMPLATE_ID=IMG-UNKNOWN-V1`, did not emit it, and continued generation using valid VISUAL_TYPE -> PROMPT_TEMPLATE_ID mappings.
 
 ### MISSING-INPUT-001 — Missing SKU incorrectly inferred from prior context
 - Status: **RESOLVED / REGRESSION PASSED on v1.10 / MONITOR**.
@@ -124,4 +113,4 @@ For future GPT instruction edits, maintainers must mentally simulate affected ac
 Do not freeze GPT #1 row contract or release Production v1.0 until TC-001..TC-032 satisfy the acceptance rubric with no unresolved hard failures and complete evidence. GPT #2 remains HOLD until GPT #1 acceptance/freeze is complete and GPT #2's own acceptance corpus passes.
 
 ## Immediate Next Action
-Execute **TC-024** from `campaign_content_generator_acceptance_corpus_v1.tsv` against the synchronized v1.11 candidate. Preserve raw response, verify simulated Tier-1 conflict fails safely with zero generated rows and no silent precedence within conflicting Tier 1, then write the result back to this SSOT before advancing.
+Execute **TC-025** from `campaign_content_generator_acceptance_corpus_v1.tsv` against the synchronized v1.11 candidate. Preserve raw response, verify visual family diversity expectations, then write the result back to this SSOT before advancing.
