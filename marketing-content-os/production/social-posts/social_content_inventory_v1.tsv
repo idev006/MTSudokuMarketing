@@ -4,7 +4,7 @@ BK-EL-MIX-MEDIUM-01	ประถมต้น Mixed Sudoku Pack MEDIUM	STANDARD	�
 BK-EL-MIX-HARD-01	ประถมต้น Mixed Sudoku Pack HARD	STANDARD	ประถมต้น	HARD	5	5	0	0	0	0	PLANNED	Run GPT1 NUMBER_OF_ROWS=10	Select best 5 rows after clean validation
 BK-EL-MIX-EXPERT-01	ประถมต้น Mixed Sudoku Pack EXPERT	STANDARD	ประถมต้น	EXPERT	5	5	0	0	0	0	PLANNED	Run GPT1 NUMBER_OF_ROWS=10	Select best 5 rows after clean validation
 BK-EL-MIX-DEVIL-01	ประถมต้น Mixed Sudoku Pack DEVIL	STANDARD	ประถมต้น	GRANDMASTER	5	5	0	0	0	0	PLANNED	Run GPT1 NUMBER_OF_ROWS=10	Use user-facing GRANDMASTER where appropriate
-BK-UP-MIX-EASY-01	ประถมปลาย Mixed Sudoku Pack EASY	STANDARD	ประถมปลาย	EASY	5	5	0	0	0	0	GPT1_RAW_READY	Clean/validate user-supplied GPT1 raw output	Pilot Batch 001 source received in chat
+BK-UP-MIX-EASY-01	ประถมปลาย Mixed Sudoku Pack EASY	STANDARD	ประถมปลาย	EASY	5	5	0	0	0	0	CLEAN_PASS	Select 5 rows and run GPT2 TEMPLATE_HANDOFF	Cleaner PASS locally: extracted 10 rows, validator PASS; candidate rows 001/004/007/008/009
 BK-UP-MIX-MEDIUM-01	ประถมปลาย Mixed Sudoku Pack MEDIUM	STANDARD	ประถมปลาย	MEDIUM	5	5	0	0	0	0	PLANNED	Run GPT1 NUMBER_OF_ROWS=10	Select best 5 rows after clean validation
 BK-UP-MIX-HARD-01	ประถมปลาย Mixed Sudoku Pack HARD	STANDARD	ประถมปลาย	HARD	5	5	0	0	0	0	PLANNED	Run GPT1 NUMBER_OF_ROWS=10	Select best 5 rows after clean validation
 BK-UP-MIX-EXPERT-01	ประถมปลาย Mixed Sudoku Pack EXPERT	STANDARD	ประถมปลาย	EXPERT	5	5	0	0	0	0	PLANNED	Run GPT1 NUMBER_OF_ROWS=10	Select best 5 rows after clean validation
