@@ -8,18 +8,20 @@ GitHub project documents are the operational SSOT. Chat, model memory, temporary
 Instruction changes must include internal dry-run simulation before commit/merge: simulate affected acceptance behavior, iterate until expected pass or blocker, cap at 1,000 internal iterations, then still require real Builder rerun and validation.
 
 ## Current Gate
-Smoke gate passed. Full acceptance TC-001..TC-032 is **IN_PROGRESS**.
+Smoke gate passed. Full acceptance TC-001..TC-032 is **BLOCKED_AT_TC023**.
 
-TC-022 initially failed on synchronized SYSTEM_INSTRUCTION_VERSION **1.9** because the response carried forward `SKU=BK-UP-MIX-MEDIUM-01` from prior context and generated rows despite missing `SKU` in the current request.
+TC-022 rerun passed on synchronized SYSTEM_INSTRUCTION_VERSION **1.10**: missing `SKU` failed safely with zero generated rows and asked only for `SKU`. `MISSING-INPUT-001` is resolved / regression passed on v1.10.
 
-TC-022 rerun passed on SYSTEM_INSTRUCTION_VERSION **1.10**. The current-request input isolation patch worked: missing `SKU` produced a validation error, zero generated rows, and a request for only `SKU`. Continue to **TC-023**.
+TC-023 failed on SYSTEM_INSTRUCTION_VERSION **1.10**. The input used `FORCE_PROMPT_TEMPLATE_ID=IMG-UNKNOWN-V1`. The acceptance corpus marks TC-023 as `PASS_WITH_REJECTED_OVERRIDE` and expects the unknown template to be rejected while a registered safe template is selected. Actual behavior rejected the template but stopped with zero generated rows.
+
+Do not advance to TC-024 until GPT #1 Instructions are patched so unknown forced template overrides are rejected while safe generation continues, the manifest version is updated, and TC-023 rerun passes.
 
 ## Full Acceptance Status
 | Test range | Status | Notes |
 |---|---|---|
 | TC-001..TC-008 | COMPLETE_FOR_RANGE | TC-001 PASS_WITH_WARNING; TC-002 PASS_WITH_WARNING; TC-003 rerun PASS_WITH_WARNING; TC-004 PASS_WITH_WARNING; TC-005 v1.6 rerun PASS_WITH_WARNING; TC-006 v1.7 rerun PASS_WITH_WARNING; TC-007 PASS; TC-008 PASS_WITH_WARNING |
 | TC-009..TC-016 | COMPLETE_FOR_RANGE | TC-009 PASS_WITH_WARNING; TC-010 PASS_WITH_WARNING; TC-011 initial FAIL; TC-011 v1.8 rerun PASS_WITH_WARNING; TC-012 PASS_WITH_WARNING; TC-013 initial FAIL; TC-013 v1.9 rerun PASS_WITH_WARNING; TC-014 PASS_WITH_WARNING; TC-015 PASS_WITH_WARNING; TC-016 PASS_WITH_WARNING |
-| TC-017..TC-024 | IN_PROGRESS | TC-017 PASS_WITH_WARNING; TC-018 PASS_WITH_WARNING; TC-019 PASS_WITH_WARNING; TC-020 PASS_WITH_WARNING; TC-021 PASS; TC-022 initial FAIL; TC-022 v1.10 rerun PASS; TC-023 next; remaining invalid template and Tier-1 conflict pending |
+| TC-017..TC-024 | BLOCKED_AT_TC023 | TC-017 PASS_WITH_WARNING; TC-018 PASS_WITH_WARNING; TC-019 PASS_WITH_WARNING; TC-020 PASS_WITH_WARNING; TC-021 PASS; TC-022 initial FAIL; TC-022 v1.10 rerun PASS; TC-023 FAIL; TC-023 mitigation/rerun required before TC-024 |
 | TC-025..TC-032 | PENDING | diversity, TSV escaping, large batches, AUTO, taxonomy, lookup, manifest |
 
 ## Per-Test Evidence Record
@@ -39,11 +41,11 @@ TC-022 rerun passed on SYSTEM_INSTRUCTION_VERSION **1.10**. The current-request 
 | TC-009 | PASS_WITH_WARNING | 1.7 | 20 | PASS | 44/45 | `tests/evidence/TC-009_2026-08-23_review.md` | Advanced overrides accepted: trustworthy tone, soft CTA, conversion-led campaign. Direct-sale streak <=2. |
 | TC-010 | PASS_WITH_WARNING | 1.7 | 20 | PASS | 44/45 | `tests/evidence/TC-010_2026-08-23_review.md` | `FORBIDDEN_ANGLES=competition` respected; no competition angle/pillar/visual/copy. DEVIL surfaced as GRANDMASTER safely. OUTPUT-FMT-001 reproduced. |
 | TC-011 initial | FAIL | 1.7 | 0 | FAIL | not release-scored | `tests/evidence/TC-011_2026-08-23_review.md` | Unsafe official-endorsement override rejected, but generation incorrectly stopped instead of continuing with safe 20-row campaign. OVERRIDE-SAFETY-001 opened. |
-| TC-011 rerun | PASS_WITH_WARNING | 1.8 | 20 | PASS | 44/45 | `tests/evidence/TC-011_2026-08-23_rerun_v1.8_review.md` | Unsafe official-endorsement override rejected while safe competition-training generation continued. OUTPUT-FMT-001 reproduced. ASPECT-RATIO-001 opened as non-blocking monitor warning. |
+| TC-011 rerun | PASS_WITH_WARNING | 1.8 | 20 | PASS | 44/45 | `tests/evidence/TC-011_2026-08-23_rerun_v1.8_review.md` | Unsafe official-endorsement override rejected while safe competition-training generation continued. OUTPUT-FMT-001 reproduced. ASPECT-RATIO-001 opened. |
 | TC-012 | PASS_WITH_WARNING | 1.8 | 20 | PASS | 44/45 | `tests/evidence/TC-012_2026-08-23_review.md` | Unsupported promotion/deadline override rejected while safe Standard-SKU generation continued. OUTPUT-FMT-001 and ASPECT-RATIO-001 reproduced. |
 | TC-013 initial | FAIL | 1.8 | 30 | FAIL | not release-scored | `tests/evidence/TC-013_2026-08-23_review.md` | Row 8 OBJECTIVE emitted as ` CREATE_ENGAGEMENT`; row 11 CAMPAIGN_ROLE emitted as ` AWARENESS`. MACHINE-TOKEN-001 reopened. |
 | TC-013 rerun | PASS_WITH_WARNING | 1.9 | 30 | PASS | 44/45 | `tests/evidence/TC-013_2026-08-24_rerun_v1.9_review.md` | MACHINE-TOKEN-001 regression passed. LINE OA adaptation and safe 6x6 Standard-SKU grounding passed. OUTPUT-FMT-001 and ASPECT-RATIO-001 reproduced. |
-| TC-014 | PASS_WITH_WARNING | 1.9 | 30 | PASS | 44/45 | `tests/evidence/TC-014_2026-08-24_review.md` | Marketplace adaptation and structured product listing / consideration-conversion behavior passed. Safe 9x9 Standard-SKU grounding passed. OUTPUT-FMT-001 and ASPECT-RATIO-001 reproduced. |
+| TC-014 | PASS_WITH_WARNING | 1.9 | 30 | PASS | 44/45 | `tests/evidence/TC-014_2026-08-24_review.md` | Marketplace adaptation and structured product listing / consideration-conversion behavior passed. OUTPUT-FMT-001 and ASPECT-RATIO-001 reproduced. |
 | TC-015 | PASS_WITH_WARNING | 1.9 | 30 | PASS | 44/45 | `tests/evidence/TC-015_2026-08-24_review.md` | FORMULA mode passed: all IMAGE_PROMPT fields blank, schema not expanded, and visual/template mappings valid. OUTPUT-FMT-001 reproduced. |
 | TC-016 | PASS_WITH_WARNING | 1.9 | 5 | PASS | 44/45 | `tests/evidence/TC-016_2026-08-24_review.md` | `VISUAL_MIX: 100% Product Hero` accepted as a safe creative override; all rows use PRODUCT_HERO and IMG-PRODUCT-HERO-V1. OUTPUT-FMT-001 reproduced. |
 | TC-017 | PASS_WITH_WARNING | 1.9 | 20 | PASS | 44/45 | `tests/evidence/TC-017_2026-08-24_review.md` | Upper-secondary EASY positioning passed: not advanced-only or competition-only; safe 9x9 Standard-SKU grounding passed. OUTPUT-FMT-001 reproduced. |
@@ -51,54 +53,52 @@ TC-022 rerun passed on SYSTEM_INSTRUCTION_VERSION **1.10**. The current-request 
 | TC-019 | PASS_WITH_WARNING | 1.9 | 5 | PASS | 44/45 | `tests/evidence/TC-019_2026-08-24_review.md` | Elementary Competition small-batch safety passed: training/preparation only, no official/endorsement/real questions/guaranteed-result claims, useful 5-row diversity. OUTPUT-FMT-001 and ASPECT-RATIO-001 reproduced. |
 | TC-020 | PASS_WITH_WARNING | 1.9 | 30 | PASS | 44/45 | `tests/evidence/TC-020_2026-08-24_review.md` | Previous-campaign context respected: no CHALLENGE_MASTERY angle family or PUZZLE_CHALLENGE creative; awareness-led copy remained safe. OUTPUT-FMT-001 reproduced. |
 | TC-021 | PASS | 1.9 | 0 | PASS | n/a | `tests/evidence/TC-021_2026-08-24_review.md` | Missing `NUMBER_OF_ROWS` failed safely; zero rows; identified only the missing required field. |
-| TC-022 initial | FAIL | 1.9 | 20 | FAIL | not release-scored | `tests/evidence/TC-022_2026-08-24_review.md` | Missing `SKU` incorrectly carried forward `BK-UP-MIX-MEDIUM-01` from prior context and generated rows. MISSING-INPUT-001 opened. |
-| TC-022 rerun | PASS | 1.10 | 0 | PASS | n/a | `tests/evidence/TC-022_2026-08-24_rerun_v1.10_review.md` | Missing `SKU` failed safely under current-request input isolation; zero rows; asked only for `SKU`. MISSING-INPUT-001 regression passed. |
+| TC-022 initial | FAIL | 1.9 | 20 | FAIL | not release-scored | `tests/evidence/TC-022_2026-08-24_review.md` | Missing `SKU` incorrectly carried forward `BK-UP-MIX-MEDIUM-01`. MISSING-INPUT-001 opened. |
+| TC-022 rerun | PASS | 1.10 | 0 | PASS | n/a | `tests/evidence/TC-022_2026-08-24_rerun_v1.10_review.md` | Missing `SKU` failed safely; zero rows; asked only for SKU. MISSING-INPUT-001 resolved/regression passed. |
+| TC-023 | FAIL | 1.10 | 0 | FAIL | not release-scored | `tests/evidence/TC-023_2026-08-24_review.md` | Unknown forced prompt template was rejected but generation stopped with zero rows. Acceptance expected rejected override plus safe registered template continuation. TEMPLATE-OVERRIDE-001 opened. |
 
 ## Latest Observations
 
-### TC-022 Rerun v1.10 Observations
-- input fields present: `NUMBER_OF_ROWS=20`, `PLATFORM=AUTO`, `CAMPAIGN_GOAL=AUTO`
-- missing required field: `SKU`
+### TC-023 Observations
+- input SKU: `BK-UP-MIX-HARD-01`
+- requested rows: 10
+- requested platform: `Facebook`
+- requested campaign goal: `AUTO`
+- override: `FORCE_PROMPT_TEMPLATE_ID=IMG-UNKNOWN-V1`
 - SYSTEM_INSTRUCTION_VERSION: `1.10`
-- expected row_count: 0
-- row_count_actual: 0
-- generated campaign rows observed: 0
-- carry-forward SKU observed: 0
-- validation error: `SKU` is required and must appear explicitly in the current request
-- missing-field specificity: PASS; asks only for `SKU`
-- current-request SKU isolation: PASS
-- deterministic/structural gate: PASS for expected-fail case
-- result: PASS
+- expected acceptance behavior: reject unknown template override, do not emit `IMG-UNKNOWN-V1`, continue generation using valid VISUAL_TYPE -> PROMPT_TEMPLATE_ID mapping
+- actual row_count: 0
+- safe registered template continuation: FAIL
+- deterministic/structural gate: FAIL for this expected-pass-with-rejected-override case
+- result: FAIL
 
 ## Acceptance Defects
 
+### TEMPLATE-OVERRIDE-001 — Unknown forced prompt template stops generation instead of safe continuation
+- Status: **OPEN / BLOCKING**.
+- Trigger: TC-023.
+- Expected: reject `FORCE_PROMPT_TEMPLATE_ID=IMG-UNKNOWN-V1`, do not emit it, continue generation using valid VISUAL_TYPE -> PROMPT_TEMPLATE_ID mapping.
+- Actual: validation error and zero generated rows.
+- Required mitigation: update GPT #1 Instructions to treat unknown forced prompt-template overrides as rejected optional overrides when SKU and required inputs are otherwise valid.
+- Required rerun: TC-023 after instruction/manifest version update.
+
 ### MISSING-INPUT-001 — Missing SKU incorrectly inferred from prior context
 - Status: **RESOLVED / REGRESSION PASSED on v1.10 / MONITOR**.
-- Trigger: TC-022 initial on v1.9.
-- Expected: missing `SKU` should fail safely with zero rows and ask only for `SKU`, unless the same current user request explicitly supplies a single unambiguous SKU.
-- Initial actual: response carried forward `SKU=BK-UP-MIX-MEDIUM-01` from prior context and generated 20 campaign rows.
-- Mitigation: v1.10 added current-request input isolation requiring General Mode `SKU` to appear explicitly in the current user request payload/message as a valid SKU token.
-- Rerun result: TC-022 v1.10 PASS; zero rows; asks only for `SKU`.
 
 ### MACHINE-TOKEN-001 — Controlled field emitted with outer whitespace
 - Status: **RESOLVED / REGRESSION PASSED on v1.9 / MONITOR**.
-- Earlier recurrence: TC-013 v1.8 row 8 `OBJECTIVE= CREATE_ENGAGEMENT`; row 11 `CAMPAIGN_ROLE= AWARENESS`.
-- v1.9 reruns: no leading/trailing whitespace observed in controlled machine-token fields through TC-020. TC-021 and TC-022 rerun emitted zero rows. TC-022 initial is not scored for row-level token quality because rows should not have been generated.
 
 ### OVERRIDE-SAFETY-001 — Unsafe optional override stops valid base generation
 - Status: **RESOLVED / REGRESSION PASSED on v1.8**.
 
 ### ASPECT-RATIO-001 — Product-box aspect ratio token inconsistent with prior convention
 - Status: **OPEN / NON-BLOCKING WARNING / MONITOR**.
-- TC-011, TC-012, TC-013 initial, TC-013 v1.9 rerun, TC-014, and TC-019 PRODUCT_BOX rows used `1236:2000` in ASPECT_RATIO.
-- TC-015, TC-016, TC-017, TC-018, and TC-020 did not newly reproduce this warning because Facebook portrait rows used `4:5` and `1080x1350 px`.
 
 ### MACHINE-TOKEN-002 — Controlled token from wrong taxonomy column
 - Status: **RESOLVED / REGRESSION PASSED on v1.7**.
 
 ### OUTPUT-FMT-001 — Empty Markdown code fence
-- Status: **OPEN / REPRODUCED THROUGH TC-020 AND TC-022 INITIAL / NON-BLOCKING by itself**.
-- TC-021 and TC-022 rerun emitted no TSV rows and did not reproduce an empty code fence.
+- Status: **OPEN / REPRODUCED THROUGH TC-020 AND TC-022 / NON-BLOCKING by itself**.
 - Must be resolved/regression-tested before Production v1.0.
 
 ### SELF-CHECK-001 — Self-check/post-output correction weakness
@@ -117,4 +117,4 @@ For future GPT instruction edits, maintainers must mentally simulate affected ac
 Do not freeze GPT #1 row contract or release Production v1.0 until TC-001..TC-032 satisfy the acceptance rubric with no unresolved hard failures and complete evidence. GPT #2 remains HOLD until GPT #1 acceptance/freeze is complete and GPT #2's own acceptance corpus passes.
 
 ## Immediate Next Action
-Execute **TC-023** from `campaign_content_generator_acceptance_corpus_v1.tsv` against the synchronized v1.10 candidate. Preserve raw response, verify `FORCE_PROMPT_TEMPLATE_ID=IMG-UNKNOWN-V1` is rejected and safe template mapping continues without schema/template expansion, then write the result back to this SSOT before advancing.
+Patch GPT #1 Instructions so unknown forced prompt-template overrides are rejected while safe generation continues, update `knowledge_manifest_v1.yaml` to the new instruction version, then rerun **TC-023**. Do not advance to TC-024 until TC-023 passes.
