@@ -3,19 +3,23 @@
 ## Governance
 This execution record is governed by `marketing-content-os/docs/00_DOCUMENT_DRIVEN_SSOT_GOVERNANCE.md` and `marketing-content-os/docs/02_INSTRUCTION_AUTHORING_DRY_RUN_POLICY.md`.
 
-GitHub project documents are the operational SSOT. Chat, model memory, temporary notes, and unsynchronized GPT Builder settings are not authoritative by themselves. Every material acceptance result, blocker, mitigation, version change, and release decision must be recorded in the repository.
+GitHub project documents are the operational SSOT. Chat, model memory, temporary notes, generated prose, and unsynchronized GPT Builder settings are not authoritative by themselves. Every material acceptance result, blocker, mitigation, version change, and release decision must be recorded in the repository.
 
 Instruction changes must include internal dry-run simulation before commit/merge: simulate affected acceptance behavior, iterate until expected pass or blocker, cap at 1,000 internal iterations, then still require real Builder rerun and validation.
 
 ## Current Gate
-Smoke gate passed. Full acceptance TC-001..TC-032 is **IN_PROGRESS**. TC-021 passed on synchronized SYSTEM_INSTRUCTION_VERSION **1.9**: missing `NUMBER_OF_ROWS` in General Mode failed safely with zero generated rows and identified only the missing required field. Continue to **TC-022**.
+Smoke gate passed. Full acceptance TC-001..TC-032 is **BLOCKED_AT_TC022**.
+
+TC-022 failed on synchronized SYSTEM_INSTRUCTION_VERSION **1.9**. The input omitted required `SKU`, but the response carried forward `SKU=BK-UP-MIX-MEDIUM-01` from prior context and generated 20 campaign rows. Expected behavior was safe failure with zero rows and a request for only the missing `SKU` field.
+
+Do not advance to TC-023 until GPT #1 Instructions are patched, manifest version is updated, and TC-022 rerun passes.
 
 ## Full Acceptance Status
 | Test range | Status | Notes |
 |---|---|---|
 | TC-001..TC-008 | COMPLETE_FOR_RANGE | TC-001 PASS_WITH_WARNING; TC-002 PASS_WITH_WARNING; TC-003 rerun PASS_WITH_WARNING; TC-004 PASS_WITH_WARNING; TC-005 v1.6 rerun PASS_WITH_WARNING; TC-006 v1.7 rerun PASS_WITH_WARNING; TC-007 PASS; TC-008 PASS_WITH_WARNING |
 | TC-009..TC-016 | COMPLETE_FOR_RANGE | TC-009 PASS_WITH_WARNING; TC-010 PASS_WITH_WARNING; TC-011 initial FAIL; TC-011 v1.8 rerun PASS_WITH_WARNING; TC-012 PASS_WITH_WARNING; TC-013 initial FAIL; TC-013 v1.9 rerun PASS_WITH_WARNING; TC-014 PASS_WITH_WARNING; TC-015 PASS_WITH_WARNING; TC-016 PASS_WITH_WARNING |
-| TC-017..TC-024 | IN_PROGRESS | TC-017 PASS_WITH_WARNING; TC-018 PASS_WITH_WARNING; TC-019 PASS_WITH_WARNING; TC-020 PASS_WITH_WARNING; TC-021 PASS; TC-022 next; remaining missing SKU, invalid template, Tier-1 conflict pending |
+| TC-017..TC-024 | BLOCKED_AT_TC022 | TC-017 PASS_WITH_WARNING; TC-018 PASS_WITH_WARNING; TC-019 PASS_WITH_WARNING; TC-020 PASS_WITH_WARNING; TC-021 PASS; TC-022 FAIL; TC-022 mitigation/rerun required before TC-023 |
 | TC-025..TC-032 | PENDING | diversity, TSV escaping, large batches, AUTO, taxonomy, lookup, manifest |
 
 ## Per-Test Evidence Record
@@ -47,29 +51,38 @@ Smoke gate passed. Full acceptance TC-001..TC-032 is **IN_PROGRESS**. TC-021 pas
 | TC-019 | PASS_WITH_WARNING | 1.9 | 5 | PASS | 44/45 | `tests/evidence/TC-019_2026-08-24_review.md` | Elementary Competition small-batch safety passed: training/preparation only, no official/endorsement/real questions/guaranteed-result claims, useful 5-row diversity. OUTPUT-FMT-001 and ASPECT-RATIO-001 reproduced. |
 | TC-020 | PASS_WITH_WARNING | 1.9 | 30 | PASS | 44/45 | `tests/evidence/TC-020_2026-08-24_review.md` | Previous-campaign context respected: no CHALLENGE_MASTERY angle family or PUZZLE_CHALLENGE creative; awareness-led copy remained safe. OUTPUT-FMT-001 reproduced. |
 | TC-021 | PASS | 1.9 | 0 | PASS | n/a | `tests/evidence/TC-021_2026-08-24_review.md` | Missing `NUMBER_OF_ROWS` failed safely; zero rows; identified only the missing required field. |
+| TC-022 | FAIL | 1.9 | 20 | FAIL | not release-scored | `tests/evidence/TC-022_2026-08-24_review.md` | Missing `SKU` incorrectly carried forward `BK-UP-MIX-MEDIUM-01` from prior context and generated rows. MISSING-INPUT-001 opened. |
 
 ## Latest Observations
 
-### TC-021 Observations
-- input SKU: `BK-UP-MIX-MEDIUM-01`
-- requested platform: `AUTO`
-- requested campaign goal: `AUTO`
-- missing required field: `NUMBER_OF_ROWS`
-- SYSTEM_INSTRUCTION_VERSION: `1.9` candidate context
-- row_count_actual: 0
-- safe failure: PASS
-- missing-field specificity: PASS
-- fabricated fallback rows observed: 0
-- product/claim fabrication observed: 0
-- deterministic/structural gate: PASS for expected-fail case
-- result: PASS
+### TC-022 Observations
+- input fields present: `NUMBER_OF_ROWS=20`, `PLATFORM=AUTO`, `CAMPAIGN_GOAL=AUTO`
+- missing required field: `SKU`
+- SYSTEM_INSTRUCTION_VERSION: `1.9`
+- expected row_count: 0
+- row_count_actual: 20
+- actual response stated: `Carried forward SKU=BK-UP-MIX-MEDIUM-01`
+- stable CAMPAIGN_ID generated: `CMP-BK-UP-MIX-MEDIUM-01-FACEBOOK-20260824`
+- generated campaign rows observed: yes
+- safe missing-field failure: FAIL
+- current-request SKU isolation: FAIL
+- deterministic/structural gate: FAIL for expected-fail case
+- result: FAIL
 
 ## Acceptance Defects
+
+### MISSING-INPUT-001 — Missing SKU incorrectly inferred from prior context
+- Status: **OPEN / BLOCKING**.
+- Trigger: TC-022.
+- Expected: missing `SKU` should fail safely with zero rows and ask only for `SKU`, unless the same current user request explicitly supplies a single unambiguous SKU.
+- Actual: response carried forward `SKU=BK-UP-MIX-MEDIUM-01` from prior context and generated 20 campaign rows.
+- Required mitigation: update GPT #1 Instructions to treat absent `SKU` as a hard blocker in General Mode acceptance requests; do not infer SKU from prior test cases or earlier conversation state.
+- Required rerun: TC-022 after instruction/manifest version update.
 
 ### MACHINE-TOKEN-001 — Controlled field emitted with outer whitespace
 - Status: **RESOLVED / REGRESSION PASSED on v1.9 / MONITOR**.
 - Earlier recurrence: TC-013 v1.8 row 8 `OBJECTIVE= CREATE_ENGAGEMENT`; row 11 `CAMPAIGN_ROLE= AWARENESS`.
-- v1.9 reruns: no leading/trailing whitespace observed in controlled machine-token fields through TC-020. TC-021 emitted zero rows, so no row-level machine tokens were present.
+- v1.9 reruns: no leading/trailing whitespace observed in controlled machine-token fields through TC-020. TC-021 emitted zero rows. TC-022 is not scored for row-level token quality because rows should not have been generated.
 
 ### OVERRIDE-SAFETY-001 — Unsafe optional override stops valid base generation
 - Status: **RESOLVED / REGRESSION PASSED on v1.8**.
@@ -78,14 +91,14 @@ Smoke gate passed. Full acceptance TC-001..TC-032 is **IN_PROGRESS**. TC-021 pas
 - Status: **OPEN / NON-BLOCKING WARNING / MONITOR**.
 - TC-011, TC-012, TC-013 initial, TC-013 v1.9 rerun, TC-014, and TC-019 PRODUCT_BOX rows used `1236:2000` in ASPECT_RATIO.
 - TC-015, TC-016, TC-017, TC-018, and TC-020 did not newly reproduce this warning because Facebook portrait rows used `4:5` and `1080x1350 px`.
-- TC-021 emitted zero rows and therefore did not exercise aspect ratio behavior.
 
 ### MACHINE-TOKEN-002 — Controlled token from wrong taxonomy column
 - Status: **RESOLVED / REGRESSION PASSED on v1.7**.
 
 ### OUTPUT-FMT-001 — Empty Markdown code fence
-- Status: **OPEN / REPRODUCED THROUGH TC-020 / NON-BLOCKING by itself**.
+- Status: **OPEN / REPRODUCED THROUGH TC-020 AND TC-022 / NON-BLOCKING by itself**.
 - TC-021 emitted no TSV rows and did not reproduce an empty code fence.
+- TC-022 reproduced empty code fences, but the primary blocker is missing-SKU carry-forward.
 - Must be resolved/regression-tested before Production v1.0.
 
 ### SELF-CHECK-001 — Self-check/post-output correction weakness
@@ -104,4 +117,4 @@ For future GPT instruction edits, maintainers must mentally simulate affected ac
 Do not freeze GPT #1 row contract or release Production v1.0 until TC-001..TC-032 satisfy the acceptance rubric with no unresolved hard failures and complete evidence. GPT #2 remains HOLD until GPT #1 acceptance/freeze is complete and GPT #2's own acceptance corpus passes.
 
 ## Immediate Next Action
-Execute **TC-022** from `campaign_content_generator_acceptance_corpus_v1.tsv` against the synchronized v1.9 candidate. Preserve raw response, verify missing `SKU` fails safely with zero generated rows unless the SKU is unambiguous from explicit current context, then write the result back to this SSOT before advancing.
+Patch GPT #1 Instructions to prevent missing-SKU context carry-forward, update `knowledge_manifest_v1.yaml` to the new instruction version, then rerun **TC-022**. Do not advance to TC-023 until TC-022 passes.
