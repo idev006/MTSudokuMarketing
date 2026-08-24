@@ -10,9 +10,9 @@ Instruction changes must include internal dry-run simulation before commit/merge
 ## Current Gate
 Smoke gate passed. Full acceptance TC-001..TC-032 is **IN_PROGRESS**.
 
-TC-027 passed with warning on synchronized SYSTEM_INSTRUCTION_VERSION **1.11**. The large-batch output emitted one logical 60-row dataset in three 20-row chunks, preserved a single stable campaign ID, and used global SEQUENCE 1..60 without resetting per chunk. Each data row had exactly 27 TSV fields, `IMAGE_PROMPT` stayed blank, template mappings were valid, direct-conversion streak remained within limits, and Standard-SKU product grounding stayed within the approved 9x9 mixed-Sudoku scope. OUTPUT-FMT-001 remains reproduced and non-blocking by itself.
+TC-028 passed with warning on synchronized SYSTEM_INSTRUCTION_VERSION **1.11**. `PLATFORM=AUTO` resolved to one canonical platform (`FACEBOOK`) across all 20 rows. No row kept `AUTO` in the PLATFORM field. Product grounding, template mapping, 27-field schema, sequence, and blank `IMAGE_PROMPT` behavior passed. OUTPUT-FMT-001 remains reproduced and non-blocking by itself.
 
-Continue to **TC-028**. Do not advance to TC-029 until TC-028 is executed and recorded.
+Continue to **TC-029**. Do not advance to TC-030 until TC-029 is executed and recorded.
 
 ## Full Acceptance Status
 | Test range | Status | Notes |
@@ -20,7 +20,7 @@ Continue to **TC-028**. Do not advance to TC-029 until TC-028 is executed and re
 | TC-001..TC-008 | COMPLETE_FOR_RANGE | TC-001 PASS_WITH_WARNING; TC-002 PASS_WITH_WARNING; TC-003 rerun PASS_WITH_WARNING; TC-004 PASS_WITH_WARNING; TC-005 v1.6 rerun PASS_WITH_WARNING; TC-006 v1.7 rerun PASS_WITH_WARNING; TC-007 PASS; TC-008 PASS_WITH_WARNING |
 | TC-009..TC-016 | COMPLETE_FOR_RANGE | TC-009 PASS_WITH_WARNING; TC-010 PASS_WITH_WARNING; TC-011 initial FAIL; TC-011 v1.8 rerun PASS_WITH_WARNING; TC-012 PASS_WITH_WARNING; TC-013 initial FAIL; TC-013 v1.9 rerun PASS_WITH_WARNING; TC-014 PASS_WITH_WARNING; TC-015 PASS_WITH_WARNING; TC-016 PASS_WITH_WARNING |
 | TC-017..TC-024 | COMPLETE_FOR_RANGE | TC-017 PASS_WITH_WARNING; TC-018 PASS_WITH_WARNING; TC-019 PASS_WITH_WARNING; TC-020 PASS_WITH_WARNING; TC-021 PASS; TC-022 initial FAIL; TC-022 v1.10 rerun PASS; TC-023 initial FAIL; TC-023 v1.11 rerun PASS_WITH_WARNING; TC-024 PASS |
-| TC-025..TC-032 | IN_PROGRESS | TC-025 PASS_WITH_WARNING; TC-026 PASS_WITH_WARNING; TC-027 PASS_WITH_WARNING; TC-028 next |
+| TC-025..TC-032 | IN_PROGRESS | TC-025 PASS_WITH_WARNING; TC-026 PASS_WITH_WARNING; TC-027 PASS_WITH_WARNING; TC-028 PASS_WITH_WARNING; TC-029 next |
 
 ## Per-Test Evidence Record
 | TEST_ID | RESULT | GPT/Instruction Version | Row Count | Gate | Score | Evidence | Notes |
@@ -57,31 +57,31 @@ Continue to **TC-028**. Do not advance to TC-029 until TC-028 is executed and re
 | TC-023 rerun | PASS_WITH_WARNING | 1.11 | 10 | PASS | 44/45 | `tests/evidence/TC-023_2026-08-24_rerun_v1.11_review.md` | Unknown forced prompt template rejected; safe generation continued. |
 | TC-024 | PASS | 1.11 | 0 | PASS | n/a | `tests/evidence/TC-024_2026-08-24_review.md` | Simulated Tier-1 conflict failed safely. |
 | TC-025 | PASS_WITH_WARNING | 1.11 | 20 | PASS | 44/45 | `tests/evidence/TC-025_2026-08-24_review.md` | 9 visual families; max visual type 3/20 = 15%; OUTPUT-FMT-001 reproduced. |
-| TC-026 | PASS_WITH_WARNING | 1.11 | 5 | PASS | 44/45 | `tests/evidence/TC-026_2026-08-24_review.md` | TSV escaping passed: one physical row per data row, 27 fields, literal `\\n` serialization, blank IMAGE_PROMPT. OUTPUT-FMT-001 reproduced. |
-| TC-027 | PASS_WITH_WARNING | 1.11 | 60 | PASS | 44/45 | `tests/evidence/TC-027_2026-08-24_review.md` | Large batch passed: 3 chunks of 20, one stable campaign ID, global SEQUENCE 1..60, 27 fields each row, blank IMAGE_PROMPT. OUTPUT-FMT-001 reproduced. |
+| TC-026 | PASS_WITH_WARNING | 1.11 | 5 | PASS | 44/45 | `tests/evidence/TC-026_2026-08-24_review.md` | TSV escaping passed. OUTPUT-FMT-001 reproduced. |
+| TC-027 | PASS_WITH_WARNING | 1.11 | 60 | PASS | 44/45 | `tests/evidence/TC-027_2026-08-24_review.md` | Large batch passed. OUTPUT-FMT-001 reproduced. |
+| TC-028 | PASS_WITH_WARNING | 1.11 | 20 | PASS | 44/45 | `tests/evidence/TC-028_2026-08-24_review.md` | AUTO platform resolution passed: all rows `FACEBOOK`, no row kept `AUTO`. OUTPUT-FMT-001 reproduced. |
 
 ## Latest Observations
 
-### TC-027 Observations
-- input SKU: `BK-US-MIX-EXPERT-01`
-- requested rows: 60
+### TC-028 Observations
+- input SKU: `BK-UP-MIX-EASY-01`
+- requested rows: 20
 - requested platform: `AUTO`
 - requested campaign goal: `AUTO`
-- override: `LARGE_BATCH_PROTOCOL`
+- override: `AUTO_PLATFORM_RESOLUTION`
 - SYSTEM_INSTRUCTION_VERSION: `1.11`
-- row_count_actual: 60
-- chunks: 3 parts with 20 rows each
-- stable campaign ID count: 1 (`CMP-BK-US-MIX-EXPERT-01-20260824-AUTO`)
-- global sequence: 1..60 continuous
-- sequence reset per chunk: no
-- expected field count: 27; all rows match
+- row_count_actual: 20
+- stable campaign ID count: 1 (`CMP-BK-UP-MIX-EASY-01-20260824-FB`)
+- global sequence: 1..20 continuous
 - platform resolution: all rows `FACEBOOK`
+- platform AUTO leak: no row kept `AUTO`
+- expected field count: 27; all rows match
 - IMAGE_PROMPT blank: PASS
 - template mappings: PASS
-- direct conversion max streak: 1
+- visual families: 9; maximum visual type frequency 3/20
 - Standard-SKU product grounding: PASS; approved `9x9 mixed Sudoku` scope only, no named variant membership or per-type counts
 - deterministic/structural gate: PASS
-- warning: OUTPUT-FMT-001 reproduced before all three TSV chunks
+- warning: OUTPUT-FMT-001 reproduced
 - result: PASS_WITH_WARNING
 
 ## Acceptance Defects
@@ -105,7 +105,7 @@ Continue to **TC-028**. Do not advance to TC-029 until TC-028 is executed and re
 - Status: **RESOLVED / REGRESSION PASSED on v1.7**.
 
 ### OUTPUT-FMT-001 — Empty Markdown code fence
-- Status: **OPEN / REPRODUCED THROUGH TC-027 / NON-BLOCKING by itself**.
+- Status: **OPEN / REPRODUCED THROUGH TC-028 / NON-BLOCKING by itself**.
 - Must be resolved/regression-tested before Production v1.0.
 
 ### SELF-CHECK-001 — Self-check/post-output correction weakness
@@ -124,4 +124,4 @@ For future GPT instruction edits, maintainers must mentally simulate affected ac
 Do not freeze GPT #1 row contract or release Production v1.0 until TC-001..TC-032 satisfy the acceptance rubric with no unresolved hard failures and complete evidence. GPT #2 remains HOLD until GPT #1 acceptance/freeze is complete and GPT #2's own acceptance corpus passes.
 
 ## Immediate Next Action
-Execute **TC-028** from `campaign_content_generator_acceptance_corpus_v1.tsv` against the synchronized v1.11 candidate. Preserve raw response, verify AUTO platform resolution produces one canonical platform and no row keeps `AUTO`, then write the result back to this SSOT before advancing.
+Execute **TC-029** from `campaign_content_generator_acceptance_corpus_v1.tsv` against the synchronized v1.11 candidate. Preserve raw response, verify `CAMPAIGN_DURATION=AUTO` does not cause the system to infer that 30 rows means 30 days, then write the result back to this SSOT before advancing.
