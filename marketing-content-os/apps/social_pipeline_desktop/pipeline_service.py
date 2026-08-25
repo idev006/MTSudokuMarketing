@@ -25,6 +25,20 @@ VISUAL_TYPE_PRIORITY = [
     "COMPETITION",
 ]
 
+SKU_LOOKUP_PROMPT_FIELDS = [
+    "BRAND_NAME",
+    "PRODUCT_NAME",
+    "THAI_NAME",
+    "GRADE_BAND",
+    "INTERNAL_DIFFICULTY",
+    "DISPLAY_DIFFICULTY",
+    "PRODUCT_FORMAT",
+    "PUZZLE_COUNT",
+    "ANSWER_KEY_STATUS",
+    "OFFER_TYPE",
+    "CLAIM_POLICY_CLASS",
+]
+
 
 @dataclass(frozen=True)
 class CleanResult:
@@ -76,7 +90,17 @@ def discover_raw_files(input_folder: Path) -> list[Path]:
     if not input_folder.exists() or not input_folder.is_dir():
         raise ValueError(f"Input folder not found: {input_folder}")
 
-    ignored_parts = {"_cleaned", "clean", "reports", "selected", "handoff", "prompts", "images", "final"}
+    ignored_parts = {
+        "_cleaned",
+        "_ready_for_gpt2",
+        "clean",
+        "reports",
+        "selected",
+        "handoff",
+        "prompts",
+        "images",
+        "final",
+    }
     files: list[Path] = []
     for path in sorted(input_folder.rglob("*")):
         if not path.is_file():
@@ -109,6 +133,14 @@ def _write_tsv_dicts(path: Path, fieldnames: list[str], rows: list[dict[str, str
         writer = csv.DictWriter(handle, fieldnames=fieldnames, delimiter="\t", lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
+
+
+def _read_sku_lookup(sku_lookup_file: Path) -> dict[str, dict[str, str]]:
+    if not sku_lookup_file.exists():
+        return {}
+    with sku_lookup_file.open("r", encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle, delimiter="\t")
+        return {str(row.get("SKU", "")).strip(): dict(row) for row in reader if row.get("SKU")}
 
 
 def recommend_rows(rows: list[dict[str, str]], limit: int) -> list[dict[str, str]]:
@@ -149,10 +181,66 @@ def recommend_rows(rows: list[dict[str, str]], limit: int) -> list[dict[str, str
 
 
 def row_to_tsv_line(fieldnames: list[str], row: dict[str, str]) -> str:
-    return "\t".join(row.get(field, "") for field in fieldnames)
+    return "\t".join(row.get(field, "") or "" for field in fieldnames)
 
 
-def build_gpt2_template(row_text: str) -> str:
+def _sku_grid_constraint(sku: str) -> str:
+    if "-EL-" in sku:
+        return "EL product group: keep visual and copy claims to mixed Sudoku 6x6 only."
+    if any(marker in sku for marker in ("-UP-", "-LS-", "-US-")):
+        return "UP/LS/US product group: keep visual and copy claims to mixed Sudoku 9x9 only."
+    return "Use only the grid size and product facts supported by the approved row and SKU lookup."
+
+
+def _format_canonical_sku_lookup(sku: str, sku_row: dict[str, str] | None) -> str:
+    if not sku_row:
+        return (
+            "CANONICAL_SKU_LOOKUP:\n"
+            f"SKU: {sku}\n"
+            "LOOKUP_STATUS: NOT_FOUND_IN_ATTACHED_SKU_LOOKUP\n"
+            "NOTE: Do not infer product-owned fields. Return a blocker if needed.\n"
+        )
+    lines = ["CANONICAL_SKU_LOOKUP:"]
+    for field in SKU_LOOKUP_PROMPT_FIELDS:
+        lines.append(f"{field}: {sku_row.get(field, '')}")
+    return "\n".join(lines) + "\n"
+
+
+def _format_product_truth_constraints(sku: str, sku_row: dict[str, str] | None) -> str:
+    claim_class = (sku_row or {}).get("CLAIM_POLICY_CLASS", "")
+    internal_difficulty = (sku_row or {}).get("INTERNAL_DIFFICULTY", "")
+    display_difficulty = (sku_row or {}).get("DISPLAY_DIFFICULTY", "")
+
+    lines = [
+        "PRODUCT_TRUTH_CONSTRAINTS:",
+        f"- {_sku_grid_constraint(sku)}",
+        "- Use CANONICAL_SKU_LOOKUP above as the source for BRAND_NAME, PRODUCT_NAME, DISPLAY_DIFFICULTY, format, puzzle count, and answer-key status.",
+        "- Do not treat marketing copy inside INPUT_ROW as the only source for product-owned fields when CANONICAL_SKU_LOOKUP is provided.",
+        "- Do not claim official affiliation, endorsements, guaranteed outcomes, fake statistics, fake rankings, or fake badges.",
+        "- Avoid rendering long Thai text inside images unless explicitly requested.",
+    ]
+    if claim_class == "STANDARD_SAFE":
+        lines.extend(
+            [
+                "- Standard SKU: keep claims generic as mixed Sudoku only.",
+                "- Do not claim named Sudoku variants, exact variant membership, ratios, exact composition, or per-type counts.",
+            ]
+        )
+    if claim_class == "COMPETITION_TRAINING_SAFE":
+        lines.extend(
+            [
+                "- Competition SKU: position as training/preparation only.",
+                "- Do not imply official contest affiliation, official exam questions, or guaranteed competition results.",
+            ]
+        )
+    if internal_difficulty == "DEVIL" and display_difficulty:
+        lines.append(f"- INTERNAL_DIFFICULTY DEVIL must be displayed to customers as {display_difficulty}.")
+    return "\n".join(lines) + "\n"
+
+
+def build_gpt2_template(row_text: str, sku: str, sku_row: dict[str, str] | None) -> str:
+    # Keep the exact TSV row, including a trailing blank IMAGE_PROMPT field in rc1 Formula Mode.
+    clean_row_text = row_text.rstrip("\r\n")
     return (
         "MODE: TEMPLATE_HANDOFF\n\n"
         "GOAL:\n"
@@ -160,7 +248,14 @@ def build_gpt2_template(row_text: str) -> str:
         "Preserve product truth and strategy. Do not add unsupported claims. "
         "IMAGE_PROMPT may be assembled from approved fields and template logic.\n\n"
         "INPUT_ROW:\n"
-        f"{row_text.strip()}\n"
+        f"{clean_row_text}\n\n"
+        f"{_format_canonical_sku_lookup(sku, sku_row)}\n"
+        f"{_format_product_truth_constraints(sku, sku_row)}\n"
+        "OUTPUT_REQUIRED:\n"
+        "- Return final social media post copy.\n"
+        "- Return a final assembled image-generation prompt ready for creative execution when CANONICAL_SKU_LOOKUP is provided.\n"
+        "- Do not stop with BLOCKED_PENDING_SKU_LOOKUP when CANONICAL_SKU_LOOKUP above contains the requested SKU facts.\n"
+        "- Keep row-level IMAGE_PROMPT blank in the canonical 27-field dataset if discussing rc1 Formula Mode; the assembled prompt is a separate handoff artifact.\n"
     )
 
 
@@ -169,9 +264,11 @@ def create_selected_outputs(
     output_root: Path,
     raw_stem: str,
     target_posts: int,
+    sku_lookup_file: Path,
 ) -> tuple[Path, Path, Path, int, int]:
     target_posts = validate_post_count(target_posts)
     fieldnames, rows = _read_tsv_dicts(clean_file)
+    sku_lookup = _read_sku_lookup(sku_lookup_file)
     selected = recommend_rows(rows, limit=target_posts)
 
     selected_file = output_root / "selected" / f"{raw_stem}_selected_{target_posts}.tsv"
@@ -185,18 +282,19 @@ def create_selected_outputs(
     prompt_files = 0
     for index, row in enumerate(selected, start=1):
         row_id = row.get("ROW_ID") or f"row_{index}"
+        sku = row.get("SKU", "")
         prompt_file = prompts_folder / f"{index:02d}_{row_id}_gpt2_prompt.txt"
-        prompt = build_gpt2_template(row_to_tsv_line(fieldnames, row))
+        prompt = build_gpt2_template(row_to_tsv_line(fieldnames, row), sku, sku_lookup.get(sku))
         prompt_file.write_text(prompt, encoding="utf-8")
         prompt_files += 1
         prompt_records.append(
             {
                 "ORDER": str(index),
                 "ROW_ID": row_id,
-                "SKU": row.get("SKU", ""),
+                "SKU": sku,
                 "VISUAL_TYPE": row.get("VISUAL_TYPE", ""),
                 "PROMPT_FILE": str(prompt_file),
-                "NEXT_ACTION": "Paste this prompt into GPT2 Visual Prompt Refiner",
+                "NEXT_ACTION": "Paste this enriched prompt into GPT2 Visual Prompt Refiner",
             }
         )
 
@@ -227,6 +325,7 @@ def clean_one_file(
 
     clean_file = clean_dir / f"{safe_stem}_clean.tsv"
     report_file = report_dir / f"{safe_stem}_clean_report.json"
+    sku_lookup_file = repo_root / "marketing-content-os" / "schemas" / "sku_lookup_v1.tsv"
 
     tool = repo_root / "marketing-content-os" / "tools" / "clean_validate_campaign_markdown.py"
     cmd = [
@@ -239,7 +338,7 @@ def clean_one_file(
         "--expected-rows",
         str(expected_rows),
         "--sku-lookup",
-        str(repo_root / "marketing-content-os" / "schemas" / "sku_lookup_v1.tsv"),
+        str(sku_lookup_file),
         "--taxonomy",
         str(repo_root / "marketing-content-os" / "schemas" / "controlled_vocabulary_v1.tsv"),
         "--template-registry",
@@ -268,12 +367,12 @@ def clean_one_file(
     if status == "PASS":
         try:
             selected_file, prompt_folder, summary_file, selected_rows, prompt_files = create_selected_outputs(
-                clean_file, output_root, safe_stem, target_posts
+                clean_file, output_root, safe_stem, target_posts, sku_lookup_file
             )
             if selected_rows < target_posts:
                 next_action = f"Only {selected_rows}/{target_posts} prompts generated; inspect clean TSV"
             else:
-                next_action = f"Use generated {prompt_files} GPT2 prompts"
+                next_action = f"Use generated {prompt_files} enriched GPT2 prompts"
         except Exception as exc:  # noqa: BLE001
             status = "FAIL"
             next_action = "Selected output generation failed; open report"
