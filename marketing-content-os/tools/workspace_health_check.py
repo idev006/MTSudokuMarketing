@@ -75,10 +75,9 @@ def _raw_dir_for_workspace(path: Path) -> Path:
 
 def discover_sku_workspaces(selected_root: Path) -> list[Path]:
     root = _normal_workspace_root(selected_root)
-    if root.name.lower() == "raw":
-        return [root.parent]
+    children = sorted(root.iterdir()) if root.exists() and root.is_dir() else []
     child_workspaces: list[Path] = []
-    for child in sorted(root.iterdir()) if root.exists() else []:
+    for child in children:
         if not child.is_dir() or child.name.startswith(".") or child.name in IGNORED_PARTS:
             continue
         if discover_raw_files(_raw_dir_for_workspace(child)):
