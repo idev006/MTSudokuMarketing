@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 from PySide6.QtCore import Qt, QThread, QUrl, Signal
-from PySide6.QtGui import QDesktopServices, QGuiApplication
+from PySide6.QtGui import QDesktopServices, QGuiApplication, QIcon
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -19,7 +19,8 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QProgressBar,
     QPushButton,
-    QSplitter,
+    QScrollArea,
+    QTabWidget,
     QTableWidget,
     QTableWidgetItem,
     QTextEdit,
@@ -33,8 +34,8 @@ try:
         MAX_POST_COUNT,
         MIN_POST_COUNT,
         ParallelWorkspaceSummary,
-        WorkspaceJobResult,
         READY_DIR_NAME,
+        WorkspaceJobResult,
         process_workspace_parallel,
     )
 except ImportError:
@@ -43,25 +44,38 @@ except ImportError:
         MAX_POST_COUNT,
         MIN_POST_COUNT,
         ParallelWorkspaceSummary,
-        WorkspaceJobResult,
         READY_DIR_NAME,
+        WorkspaceJobResult,
         process_workspace_parallel,
     )
 
 
 class PathManager:
+    """Centralized relative path manager for the desktop app.
+
+    All paths are derived from this Python file location so the app works from
+    any drive (F:, D:, etc.) without hard-coded machine-specific paths.
+    """
+
     def __init__(self) -> None:
         self.app_dir = Path(__file__).resolve().parent
         self.content_os_root = self.app_dir.parents[1]
         self.repo_root = self.content_os_root.parent
         self.default_workspace = self.repo_root / "_operator_workspace"
         self.sku_lookup = self.content_os_root / "schemas" / "sku_lookup_v1.tsv"
+        self.icon_dir = self.app_dir / "assets" / "icons"
 
     def sku_workspace(self, sku: str) -> Path:
         return self.default_workspace / sku
 
     def raw_folder(self, sku: str) -> Path:
         return self.sku_workspace(sku) / "raw"
+
+    def icon_path(self, name: str) -> Path:
+        return self.icon_dir / name
+
+    def icon_url(self, name: str) -> str:
+        return QUrl.fromLocalFile(str(self.icon_path(name))).toString()
 
 
 def load_products(sku_lookup: Path) -> list[dict[str, str]]:
@@ -116,7 +130,8 @@ class MainWindow(QMainWindow):
         self.paths = PathManager()
         self.products = load_products(self.paths.sku_lookup)
         self.setWindowTitle("เครื่องมือเตรียมคอนเทนต์ BiiigBee — เริ่มจาก GPT1 แล้วส่งต่อ GPT2")
-        self.resize(1550, 930)
+        self.resize(1500, 900)
+
         self.selected_root: Path | None = None
         self.summary: ParallelWorkspaceSummary | None = None
         self.results: list[WorkspaceJobResult] = []
@@ -124,41 +139,49 @@ class MainWindow(QMainWindow):
         self.current_prompt_index = 0
         self.copied_prompts: set[Path] = set()
         self.worker: ParallelWorker | None = None
+
         self.setStyleSheet(self.qss())
         self.setCentralWidget(self.build_ui())
         self.set_default_workspace()
         self.update_gpt1_preview()
 
     def qss(self) -> str:
-        return """
-            QMainWindow { background: #f6f8fb; color: #10203a; }
-            QLabel { color: #10203a; }
-            QLabel#Title { font-size: 24px; font-weight: 800; color: #172033; }
-            QLabel#Subtitle { font-size: 13px; color: #475569; }
-            QLabel#PanelTitle { font-size: 18px; font-weight: 800; color: #14315c; }
-            QLabel#SectionTitle { font-size: 15px; font-weight: 800; color: #1e3a8a; }
-            QLabel#Help { font-size: 13px; color: #334155; }
-            QLabel#NextAction { font-size: 18px; font-weight: 800; color: #0f5132; background: #dcfce7; border: 1px solid #86efac; border-radius: 12px; padding: 12px; }
-            QLabel#Metric { font-size: 22px; font-weight: 800; color: #14315c; }
-            QLabel#MetricText { font-size: 12px; color: #64748b; }
-            QFrame#Panel, QFrame#CommandBar, QFrame#MetricCard { background: #ffffff; border: 1px solid #dbe3ef; border-radius: 12px; }
-            QFrame#StartCard { background: #ffffff; border: 2px solid #bfdbfe; border-radius: 12px; }
-            QPushButton { color: #10203a; padding: 9px 14px; border-radius: 8px; background: #e7edf7; border: 1px solid #cbd6e7; }
-            QPushButton:hover { background: #dbeafe; border: 1px solid #93c5fd; }
-            QPushButton:disabled { color: #7c8797; background: #edf1f7; border: 1px solid #d8e0ee; }
-            QPushButton#PrimaryButton { background: #2563eb; color: #ffffff; font-size: 15px; font-weight: 800; border: 1px solid #1d4ed8; padding: 12px 18px; }
-            QPushButton#SuccessButton { background: #059669; color: #ffffff; font-weight: 800; border: 1px solid #047857; }
-            QPushButton#DangerButton { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-            QPushButton#TinyButton { padding: 7px 12px; font-weight: 800; min-width: 36px; }
-            QLineEdit, QTextEdit, QComboBox { color: #10203a; background: #ffffff; border: 1px solid #94a3b8; border-radius: 8px; padding: 8px; selection-background-color: #bfdbfe; selection-color: #0f172a; }
-            QLineEdit:read-only { background: #f8fafc; color: #334155; }
-            QLineEdit#NValue { font-size: 18px; font-weight: 800; }
-            QComboBox::drop-down { border-left: 1px solid #94a3b8; width: 30px; background: #e7edf7; }
-            QComboBox QAbstractItemView { color: #0f172a; background-color: #ffffff; selection-background-color: #2563eb; selection-color: #ffffff; outline: 0; border: 1px solid #94a3b8; }
-            QTableWidget { color: #10203a; background: #ffffff; border: 1px solid #dbe3ef; border-radius: 8px; gridline-color: #edf2f7; selection-background-color: #dbeafe; selection-color: #10203a; }
-            QHeaderView::section { background: #334155; color: #ffffff; padding: 6px; border: 0; }
-            QProgressBar { color: #10203a; border: 1px solid #cbd6e7; border-radius: 7px; text-align: center; background: #ffffff; }
-            QProgressBar::chunk { background: #2563eb; border-radius: 6px; }
+        chevron = self.paths.icon_url("chevron-down.svg")
+        return f"""
+            QMainWindow {{ background: #f6f8fb; color: #10203a; }}
+            QLabel {{ color: #10203a; }}
+            QLabel#Title {{ font-size: 24px; font-weight: 800; color: #172033; }}
+            QLabel#Subtitle {{ font-size: 13px; color: #475569; }}
+            QLabel#PanelTitle {{ font-size: 18px; font-weight: 800; color: #14315c; }}
+            QLabel#SectionTitle {{ font-size: 15px; font-weight: 800; color: #1e3a8a; }}
+            QLabel#Help {{ font-size: 13px; color: #334155; }}
+            QLabel#NextAction {{ font-size: 18px; font-weight: 800; color: #0f5132; background: #dcfce7; border: 1px solid #86efac; border-radius: 12px; padding: 12px; }}
+            QLabel#Metric {{ font-size: 22px; font-weight: 800; color: #14315c; }}
+            QLabel#MetricText {{ font-size: 12px; color: #64748b; }}
+            QFrame#Panel, QFrame#CommandBar, QFrame#MetricCard {{ background: #ffffff; border: 1px solid #dbe3ef; border-radius: 12px; }}
+            QFrame#StartCard {{ background: #ffffff; border: 2px solid #bfdbfe; border-radius: 12px; }}
+            QPushButton {{ color: #10203a; padding: 9px 14px; border-radius: 8px; background: #e7edf7; border: 1px solid #cbd6e7; }}
+            QPushButton:hover {{ background: #dbeafe; border: 1px solid #93c5fd; }}
+            QPushButton:disabled {{ color: #7c8797; background: #edf1f7; border: 1px solid #d8e0ee; }}
+            QPushButton#PrimaryButton {{ background: #2563eb; color: #ffffff; font-size: 15px; font-weight: 800; border: 1px solid #1d4ed8; padding: 12px 18px; }}
+            QPushButton#SuccessButton {{ background: #059669; color: #ffffff; font-weight: 800; border: 1px solid #047857; }}
+            QPushButton#DangerButton {{ background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }}
+            QPushButton#TinyButton {{ padding: 7px 10px; font-weight: 800; min-width: 38px; min-height: 34px; }}
+            QLineEdit, QTextEdit, QComboBox {{ color: #10203a; background: #ffffff; border: 1px solid #94a3b8; border-radius: 8px; padding: 8px; selection-background-color: #bfdbfe; selection-color: #0f172a; }}
+            QLineEdit:read-only {{ background: #f8fafc; color: #334155; }}
+            QLineEdit#NValue {{ font-size: 18px; font-weight: 800; }}
+            QComboBox {{ min-height: 26px; }}
+            QComboBox::drop-down {{ border-left: 1px solid #94a3b8; width: 32px; background: #e7edf7; border-top-right-radius: 8px; border-bottom-right-radius: 8px; }}
+            QComboBox::down-arrow {{ image: url({chevron}); width: 14px; height: 14px; }}
+            QComboBox QAbstractItemView {{ color: #0f172a; background-color: #ffffff; selection-background-color: #2563eb; selection-color: #ffffff; outline: 0; border: 1px solid #94a3b8; }}
+            QTableWidget {{ color: #10203a; background: #ffffff; border: 1px solid #dbe3ef; border-radius: 8px; gridline-color: #edf2f7; selection-background-color: #dbeafe; selection-color: #10203a; }}
+            QHeaderView::section {{ background: #334155; color: #ffffff; padding: 6px; border: 0; }}
+            QProgressBar {{ color: #10203a; border: 1px solid #cbd6e7; border-radius: 7px; text-align: center; background: #ffffff; }}
+            QProgressBar::chunk {{ background: #2563eb; border-radius: 6px; }}
+            QTabWidget::pane {{ border: 1px solid #dbe3ef; border-radius: 8px; background: #ffffff; }}
+            QTabBar::tab {{ background: #e7edf7; color: #10203a; border: 1px solid #cbd6e7; padding: 10px 18px; margin-right: 4px; border-top-left-radius: 8px; border-top-right-radius: 8px; }}
+            QTabBar::tab:selected {{ background: #2563eb; color: #ffffff; font-weight: 800; }}
+            QScrollArea {{ border: 0; background: transparent; }}
         """
 
     def build_ui(self) -> QWidget:
@@ -179,34 +202,42 @@ class MainWindow(QMainWindow):
         self.next_action.setWordWrap(True)
         layout.addWidget(self.next_action)
 
-        layout.addWidget(self.build_gpt1_panel())
-        layout.addWidget(self.build_command_bar())
-        layout.addWidget(self.build_metrics())
-
-        splitter = QSplitter(Qt.Vertical)
-        splitter.addWidget(self.build_jobs_panel())
-        splitter.addWidget(self.build_prompt_panel())
-        splitter.setSizes([400, 340])
-        layout.addWidget(splitter, stretch=1)
+        self.tabs = QTabWidget()
+        self.tabs.addTab(self.scrollable(self.build_gpt1_tab()), "1. สร้างคำสั่ง GPT1")
+        self.tabs.addTab(self.scrollable(self.build_check_tab()), "2. ตรวจคำตอบ GPT1")
+        self.tabs.addTab(self.scrollable(self.build_gpt2_tab()), "3. ส่งเข้า GPT2")
+        self.tabs.addTab(self.scrollable(self.build_summary_tab()), "4. สรุปผล")
+        layout.addWidget(self.tabs, stretch=1)
         return root
 
-    def build_gpt1_panel(self) -> QFrame:
+    def scrollable(self, widget: QWidget) -> QScrollArea:
+        scroll = QScrollArea()
+        scroll.setWidget(widget)
+        scroll.setWidgetResizable(True)
+        return scroll
+
+    def build_gpt1_tab(self) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(10)
+
         panel = QFrame()
         panel.setObjectName("StartCard")
-        layout = QGridLayout(panel)
-        layout.setContentsMargins(12, 10, 12, 10)
-        layout.setHorizontalSpacing(12)
-        layout.setVerticalSpacing(8)
+        grid = QGridLayout(panel)
+        grid.setContentsMargins(14, 12, 14, 12)
+        grid.setHorizontalSpacing(12)
+        grid.setVerticalSpacing(10)
 
-        title = QLabel("0. เริ่มงาน: สร้างคำสั่งสำหรับ GPT1")
+        title = QLabel("1. สร้างคำสั่งสำหรับ GPT1")
         title.setObjectName("PanelTitle")
         help_text = QLabel("เลือกสินค้าและจำนวนโพสต์ โปรแกรมจะสร้างคำสั่ง GPT1 ให้ copy ไปวางได้ทันที")
         help_text.setObjectName("Help")
         help_text.setWordWrap(True)
-        layout.addWidget(title, 0, 0, 1, 2)
-        layout.addWidget(help_text, 1, 0, 1, 2)
+        grid.addWidget(title, 0, 0, 1, 2)
+        grid.addWidget(help_text, 1, 0, 1, 2)
 
-        layout.addWidget(QLabel("เลือกสินค้า:"), 2, 0)
+        grid.addWidget(QLabel("เลือกสินค้า:"), 2, 0)
         self.product_combo = QComboBox()
         self.product_combo.setMinimumWidth(560)
         if self.products:
@@ -215,20 +246,39 @@ class MainWindow(QMainWindow):
         else:
             self.product_combo.addItem("ไม่พบฐานข้อมูลสินค้า — กรุณาตรวจ sku_lookup_v1.tsv", {"SKU": "<SKU>"})
         self.product_combo.currentIndexChanged.connect(self.on_product_changed)
-        layout.addWidget(self.product_combo, 2, 1)
+        grid.addWidget(self.product_combo, 2, 1)
+
+        grid.addWidget(QLabel("จำนวนโพสต์:"), 3, 0)
+        n_row = QHBoxLayout()
+        self.minus_button = self.tiny_icon_button("minus.svg", "ลดจำนวนโพสต์", lambda: self.adjust_n(-1))
+        self.n_value = QLineEdit(str(DEFAULT_POST_COUNT))
+        self.n_value.setObjectName("NValue")
+        self.n_value.setFixedWidth(80)
+        self.n_value.setAlignment(Qt.AlignCenter)
+        self.n_value.editingFinished.connect(self.normalize_n)
+        self.plus_button = self.tiny_icon_button("plus.svg", "เพิ่มจำนวนโพสต์", lambda: self.adjust_n(1))
+        n_row.addWidget(self.minus_button)
+        n_row.addWidget(self.n_value)
+        n_row.addWidget(self.plus_button)
+        n_row.addSpacing(10)
+        n_row.addWidget(QLabel("เลือกเร็ว:"))
+        for preset in (10, 20, 30, 60):
+            n_row.addWidget(self.tiny_button(str(preset), lambda _=False, value=preset: self.set_n(value)))
+        n_row.addStretch(1)
+        grid.addLayout(n_row, 3, 1)
 
         self.product_card = QTextEdit()
         self.product_card.setReadOnly(True)
-        self.product_card.setMinimumHeight(82)
-        layout.addWidget(self.product_card, 3, 0, 1, 2)
+        self.product_card.setMinimumHeight(95)
+        grid.addWidget(self.product_card, 4, 0, 1, 2)
 
         prompt_title = QLabel("คำสั่ง GPT1 ที่จะนำไปวาง:")
         prompt_title.setObjectName("SectionTitle")
-        layout.addWidget(prompt_title, 0, 2)
+        grid.addWidget(prompt_title, 0, 2)
         self.gpt1_preview = QTextEdit()
         self.gpt1_preview.setReadOnly(True)
-        self.gpt1_preview.setMinimumHeight(170)
-        layout.addWidget(self.gpt1_preview, 1, 2, 3, 1)
+        self.gpt1_preview.setMinimumHeight(220)
+        grid.addWidget(self.gpt1_preview, 1, 2, 4, 1)
 
         action_row = QHBoxLayout()
         self.copy_gpt1_button = self.action_button("คัดลอกคำสั่ง GPT1", self.copy_gpt1_prompt, "SuccessButton")
@@ -237,39 +287,36 @@ class MainWindow(QMainWindow):
         for button in (self.copy_gpt1_button, self.open_raw_button, self.save_prompt_button):
             action_row.addWidget(button)
         action_row.addStretch(1)
-        layout.addLayout(action_row, 4, 0, 1, 3)
+        grid.addLayout(action_row, 5, 0, 1, 3)
 
-        layout.setColumnStretch(1, 1)
-        layout.setColumnStretch(2, 1)
-        return panel
+        grid.setColumnStretch(1, 1)
+        grid.setColumnStretch(2, 1)
+        layout.addWidget(panel)
+        layout.addStretch(1)
+        return page
 
-    def build_command_bar(self) -> QFrame:
+    def build_check_tab(self) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(10)
+        layout.addWidget(self.build_check_command_bar())
+        layout.addWidget(self.build_metrics())
+        layout.addWidget(self.build_jobs_panel(), stretch=1)
+        return page
+
+    def build_check_command_bar(self) -> QFrame:
         panel = QFrame()
         panel.setObjectName("CommandBar")
         layout = QHBoxLayout(panel)
         layout.setContentsMargins(10, 8, 10, 8)
-        layout.addWidget(QLabel("จำนวนโพสต์ต่อสินค้า:"))
-        self.minus_button = self.tiny_button("−", lambda: self.adjust_n(-1))
-        self.n_value = QLineEdit(str(DEFAULT_POST_COUNT))
-        self.n_value.setObjectName("NValue")
-        self.n_value.setFixedWidth(80)
-        self.n_value.setAlignment(Qt.AlignCenter)
-        self.n_value.editingFinished.connect(self.normalize_n)
-        self.plus_button = self.tiny_button("+", lambda: self.adjust_n(1))
-        layout.addWidget(self.minus_button)
-        layout.addWidget(self.n_value)
-        layout.addWidget(self.plus_button)
-        for preset in (10, 20, 30, 60):
-            button = self.tiny_button(str(preset), lambda _=False, value=preset: self.set_n(value))
-            layout.addWidget(button)
-        layout.addSpacing(16)
         layout.addWidget(QLabel("ทำงานพร้อมกัน:"))
         self.worker_combo = QComboBox()
         for value in (1, 2, 3, 4, 6, 8):
             self.worker_combo.addItem(f"{value} งาน", value)
         self.worker_combo.setCurrentIndex(3)
         layout.addWidget(self.worker_combo)
-        layout.addSpacing(16)
+        layout.addWidget(QLabel("โฟลเดอร์ที่จะตรวจ:"))
         self.folder_path = QLineEdit()
         self.folder_path.setReadOnly(True)
         self.folder_path.setPlaceholderText("ยังไม่ได้เลือกโฟลเดอร์")
@@ -323,9 +370,9 @@ class MainWindow(QMainWindow):
         panel = QFrame()
         panel.setObjectName("Panel")
         layout = QVBoxLayout(panel)
-        title = QLabel("1. ผลการตรวจหลายสินค้า")
+        title = QLabel("ผลการตรวจหลายสินค้า")
         title.setObjectName("PanelTitle")
-        help_text = QLabel("ถ้าเลือก _operator_workspace โปรแกรมจะไล่ดู child folder ของแต่ละ SKU แล้วเก็บผลไว้ใน SKU/_cleaned แยกกัน")
+        help_text = QLabel("ถ้าเลือก _operator_workspace โปรแกรมจะไล่ดู child folder ของแต่ละ SKU แล้วเก็บผลไว้ใน SKU/_cleaned และ SKU/_ready_for_gpt2 แยกกัน")
         help_text.setObjectName("Help")
         help_text.setWordWrap(True)
         layout.addWidget(title)
@@ -340,13 +387,21 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.table, stretch=1)
         return panel
 
+    def build_gpt2_tab(self) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(10)
+        layout.addWidget(self.build_prompt_panel(), stretch=1)
+        return page
+
     def build_prompt_panel(self) -> QFrame:
         panel = QFrame()
         panel.setObjectName("Panel")
         layout = QGridLayout(panel)
-        title = QLabel("2. คำสั่ง GPT2 ที่พร้อมใช้")
+        title = QLabel("คำสั่ง GPT2 ที่พร้อมใช้")
         title.setObjectName("PanelTitle")
-        help_text = QLabel(f"เลือกสินค้าที่ผ่านจากตารางด้านบน แล้วใช้ไฟล์ใน {READY_DIR_NAME} เพื่อส่งเข้า GPT2 ทีละรายการ")
+        help_text = QLabel("เลือกสินค้าที่ผ่านจากแท็บผลการตรวจ แล้วคัดลอกคำสั่ง GPT2 ทีละรายการไปวางใน GPT2")
         help_text.setObjectName("Help")
         help_text.setWordWrap(True)
         layout.addWidget(title, 0, 0, 1, 2)
@@ -373,7 +428,25 @@ class MainWindow(QMainWindow):
         layout.addLayout(actions, 3, 0, 1, 2)
         layout.setColumnStretch(0, 1)
         layout.setColumnStretch(1, 2)
+        layout.setRowStretch(2, 1)
         return panel
+
+    def build_summary_tab(self) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(10, 10, 10, 10)
+        panel = QFrame()
+        panel.setObjectName("Panel")
+        inner = QVBoxLayout(panel)
+        title = QLabel("สรุปผลและขั้นตอนต่อไป")
+        title.setObjectName("PanelTitle")
+        self.summary_text = QTextEdit()
+        self.summary_text.setReadOnly(True)
+        self.summary_text.setPlainText("หลังจากตรวจหลายสินค้า โปรแกรมจะแสดงสรุปผลที่นี่")
+        inner.addWidget(title)
+        inner.addWidget(self.summary_text, stretch=1)
+        layout.addWidget(panel, stretch=1)
+        return page
 
     def action_button(self, text: str, handler, object_name: str | None = None) -> QPushButton:
         button = QPushButton(text)
@@ -388,72 +461,23 @@ class MainWindow(QMainWindow):
         button.clicked.connect(handler)
         return button
 
+    def tiny_icon_button(self, icon_name: str, tooltip: str, handler) -> QPushButton:
+        button = QPushButton()
+        button.setObjectName("TinyButton")
+        icon_path = self.paths.icon_path(icon_name)
+        if icon_path.exists():
+            button.setIcon(QIcon(str(icon_path)))
+        else:
+            button.setText("+" if "plus" in icon_name else "−")
+        button.setToolTip(tooltip)
+        button.clicked.connect(handler)
+        return button
+
     def set_default_workspace(self) -> None:
         self.paths.default_workspace.mkdir(parents=True, exist_ok=True)
         self.selected_root = self.paths.default_workspace
-        self.folder_path.setText(str(self.selected_root))
-
-    def current_product(self) -> dict[str, str]:
-        data = self.product_combo.currentData()
-        return data if isinstance(data, dict) else {"SKU": "<SKU>"}
-
-    def current_sku(self) -> str:
-        return self.current_product().get("SKU", "<SKU>")
-
-    def product_details_text(self) -> str:
-        product = self.current_product()
-        lines = [
-            f"สินค้า: {product.get('THAI_NAME') or product.get('PRODUCT_NAME') or '-'}",
-            f"SKU: {product.get('SKU', '-')}",
-            f"ชื่อสินค้าในระบบ: {product.get('PRODUCT_NAME', '-')}",
-        ]
-        for key in ("GRADE_BAND", "GRID_SIZE", "DIFFICULTY", "PUZZLE_COUNT", "ANSWER_KEY_STATUS"):
-            if product.get(key):
-                lines.append(f"{key}: {product.get(key)}")
-        return "\n".join(lines)
-
-    def build_gpt1_prompt(self) -> str:
-        return (
-            f"SKU: {self.current_sku()}\n"
-            f"NUMBER_OF_ROWS: {self.get_n()}\n"
-            "PLATFORM: AUTO\n"
-            "CAMPAIGN_GOAL: AUTO\n"
-        )
-
-    def update_gpt1_preview(self) -> None:
-        if hasattr(self, "product_card"):
-            self.product_card.setPlainText(self.product_details_text())
-        if hasattr(self, "gpt1_preview"):
-            self.gpt1_preview.setPlainText(self.build_gpt1_prompt())
-
-    def on_product_changed(self) -> None:
-        self.update_gpt1_preview()
-        self.next_action.setText("ขั้นต่อไป: คัดลอกคำสั่ง GPT1 แล้ววางใน GPT1")
-
-    def copy_gpt1_prompt(self) -> None:
-        prompt = self.build_gpt1_prompt()
-        QGuiApplication.clipboard().setText(prompt)
-        self.save_gpt1_request_file(silent=True)
-        self.next_action.setText("คัดลอกคำสั่ง GPT1 แล้ว: ให้นำไปวางใน GPT1 แล้วบันทึกคำตอบไว้ในโฟลเดอร์ raw ของสินค้านี้")
-        QMessageBox.information(self, "คัดลอกแล้ว", "คัดลอกคำสั่ง GPT1 แล้ว ให้นำไปวางใน GPT1")
-
-    def save_gpt1_request_file(self, silent: bool = False) -> None:
-        sku = self.current_sku()
-        workspace = self.paths.sku_workspace(sku)
-        workspace.mkdir(parents=True, exist_ok=True)
-        request_file = workspace / "GPT1_REQUEST.txt"
-        request_file.write_text(self.build_gpt1_prompt(), encoding="utf-8")
-        if not silent:
-            QMessageBox.information(self, "บันทึกแล้ว", f"บันทึกคำสั่ง GPT1 แล้ว:\n{request_file}")
-
-    def open_current_raw_folder(self) -> None:
-        raw_folder = self.paths.raw_folder(self.current_sku())
-        raw_folder.mkdir(parents=True, exist_ok=True)
-        self.selected_root = self.paths.default_workspace
-        self.folder_path.setText(str(self.selected_root))
-        self.save_gpt1_request_file(silent=True)
-        self.open_path(raw_folder)
-        self.next_action.setText("ขั้นต่อไป: บันทึกคำตอบจาก GPT1 เป็นไฟล์ .md หรือ .txt ในโฟลเดอร์ raw แล้วกดตรวจหลายสินค้าแบบขนาน")
+        if hasattr(self, "folder_path"):
+            self.folder_path.setText(str(self.selected_root))
 
     def get_n(self) -> int:
         try:
@@ -472,6 +496,57 @@ class MainWindow(QMainWindow):
     def normalize_n(self) -> None:
         self.set_n(self.get_n())
 
+    def current_product(self) -> dict[str, str]:
+        return self.product_combo.currentData() or {"SKU": "<SKU>"}
+
+    def current_sku(self) -> str:
+        return self.current_product().get("SKU", "<SKU>")
+
+    def on_product_changed(self) -> None:
+        self.update_gpt1_preview()
+
+    def update_gpt1_preview(self) -> None:
+        if not hasattr(self, "gpt1_preview"):
+            return
+        product = self.current_product()
+        sku = product.get("SKU", "<SKU>")
+        text = (
+            f"SKU: {sku}\n"
+            f"NUMBER_OF_ROWS: {self.get_n()}\n"
+            "PLATFORM: AUTO\n"
+            "CAMPAIGN_GOAL: AUTO\n"
+        )
+        self.gpt1_preview.setPlainText(text)
+        card = (
+            f"สินค้า: {product.get('THAI_NAME') or product.get('PRODUCT_NAME') or '-'}\n"
+            f"SKU: {sku}\n"
+            f"ชื่อสินค้าในระบบ: {product.get('PRODUCT_NAME', '-')}\n"
+            f"GRADE_BAND: {product.get('GRADE_BAND', '-')}\n"
+            f"PUZZLE_COUNT: {product.get('PUZZLE_COUNT', '-')}\n"
+            f"ANSWER_KEY_STATUS: {product.get('ANSWER_KEY_STATUS', '-')}"
+        )
+        self.product_card.setPlainText(card)
+
+    def copy_gpt1_prompt(self) -> None:
+        QGuiApplication.clipboard().setText(self.gpt1_preview.toPlainText())
+        self.next_action.setText("คัดลอกคำสั่ง GPT1 แล้ว: ให้นำไปวางใน GPT1 จากนั้น save คำตอบเป็น .md หรือ .txt ในโฟลเดอร์ raw")
+        self.tabs.setCurrentIndex(0)
+
+    def open_current_raw_folder(self) -> None:
+        raw = self.paths.raw_folder(self.current_sku())
+        raw.mkdir(parents=True, exist_ok=True)
+        self.open_path(raw)
+        self.next_action.setText("เปิดโฟลเดอร์ raw แล้ว: บันทึกคำตอบจาก GPT1 ลงโฟลเดอร์นี้")
+
+    def save_gpt1_request_file(self) -> None:
+        sku = self.current_sku()
+        folder = self.paths.sku_workspace(sku)
+        folder.mkdir(parents=True, exist_ok=True)
+        request_file = folder / f"{sku}_gpt1_request.txt"
+        request_file.write_text(self.gpt1_preview.toPlainText(), encoding="utf-8")
+        self.open_path(request_file)
+        self.next_action.setText("บันทึกคำสั่ง GPT1 แล้ว: ใช้ไฟล์นี้เป็นหลักฐาน/อ้างอิง แล้วนำคำสั่งไปวางใน GPT1")
+
     def choose_folder(self) -> None:
         start = str(self.selected_root or self.paths.default_workspace or self.paths.repo_root)
         folder = QFileDialog.getExistingDirectory(self, "เลือก _operator_workspace หรือโฟลเดอร์สินค้า", start)
@@ -480,6 +555,7 @@ class MainWindow(QMainWindow):
         self.selected_root = Path(folder)
         self.folder_path.setText(str(self.selected_root))
         self.next_action.setText("ขั้นต่อไป: กด “ตรวจหลายสินค้าแบบขนาน”")
+        self.tabs.setCurrentIndex(1)
 
     def run_parallel(self) -> None:
         if self.selected_root is None:
@@ -516,12 +592,15 @@ class MainWindow(QMainWindow):
         self.set_metric(self.raw_metric, str(summary.raw_file_count))
         self.set_metric(self.prompt_metric, str(summary.ready_prompt_file_count))
         self.populate_jobs()
+        self.update_summary_text()
         if summary.pass_job_count > 0:
-            self.next_action.setText("ขั้นต่อไป: เลือกสินค้าที่ผ่าน แล้วคัดลอกคำสั่ง GPT2 ทีละรายการ")
+            self.next_action.setText("ขั้นต่อไป: ไปแท็บ “ส่งเข้า GPT2” แล้วคัดลอกคำสั่งทีละรายการ")
             first_pass = next((index for index, result in enumerate(self.results) if result.status == "PASS"), 0)
             self.table.selectRow(first_pass)
+            self.tabs.setCurrentIndex(2)
         else:
             self.next_action.setText("ยังไม่มีสินค้าที่ผ่าน: เปิดรายงานในแต่ละ SKU แล้วแก้ไฟล์ GPT1")
+            self.tabs.setCurrentIndex(1)
 
     def set_metric(self, frame: QFrame, value: str) -> None:
         frame.value_label.setText(value)  # type: ignore[attr-defined]
@@ -529,8 +608,7 @@ class MainWindow(QMainWindow):
     def populate_jobs(self) -> None:
         self.table.setRowCount(len(self.results))
         for row, result in enumerate(self.results):
-            ready_dir = result.ready_gpt2_dir or (result.job.workspace_dir / READY_DIR_NAME)
-            next_action = "เปิดโฟลเดอร์พร้อมส่ง GPT2" if result.status == "PASS" else "เปิดรายงานและแก้ก่อน"
+            next_action = "ใช้ไฟล์ใน _ready_for_gpt2" if result.status == "PASS" else "เปิดรายงานและแก้ก่อน"
             values = [
                 result.status,
                 result.job.sku,
@@ -539,7 +617,7 @@ class MainWindow(QMainWindow):
                 str(result.fail_count),
                 str(result.prompt_file_count),
                 str(result.ready_prompt_count),
-                str(ready_dir if result.status == "PASS" else result.output_root),
+                str(result.ready_gpt2_dir or result.output_root),
                 next_action if not result.error_message else result.error_message,
             ]
             for col, value in enumerate(values):
@@ -548,6 +626,29 @@ class MainWindow(QMainWindow):
                     item.setTextAlignment(Qt.AlignCenter)
                 self.table.setItem(row, col, item)
         self.table.resizeRowsToContents()
+
+    def update_summary_text(self) -> None:
+        if not self.summary:
+            return
+        lines = [
+            "สรุปผลการตรวจ",
+            f"โฟลเดอร์: {self.summary.selected_root}",
+            f"จำนวนโพสต์ต่อสินค้า N: {self.summary.post_count}",
+            f"ทำงานพร้อมกัน: {self.summary.max_workers} งาน",
+            f"จำนวนสินค้า: {self.summary.job_count}",
+            f"ผ่าน: {self.summary.pass_job_count}",
+            f"ไม่ผ่าน: {self.summary.fail_job_count}",
+            f"ไฟล์ GPT1: {self.summary.raw_file_count}",
+            f"คำสั่ง GPT2 ที่พร้อมใช้: {self.summary.ready_prompt_file_count}",
+            "",
+            "ขั้นตอนต่อไป:",
+            "1. เปิดแท็บ ส่งเข้า GPT2",
+            "2. เลือกสินค้าที่ผ่าน",
+            "3. คัดลอก 01_gpt2_prompt.txt ไปวางใน GPT2",
+            "4. ทำไฟล์ถัดไปตามลำดับ",
+            "5. ใช้ผล GPT2 ไปสร้างภาพและตรวจงานก่อนโพสต์",
+        ]
+        self.summary_text.setPlainText("\n".join(lines))
 
     def selected_result(self) -> WorkspaceJobResult | None:
         selected = self.table.selectionModel().selectedRows()
@@ -562,13 +663,15 @@ class MainWindow(QMainWindow):
         self.current_prompt_index = 0
         self.prompt_list.setRowCount(0)
         self.prompt_preview.clear()
-        enable = bool(result and result.status == "PASS" and result.ready_gpt2_dir and result.ready_gpt2_dir.exists())
+        enable = bool(result and result.status == "PASS")
         for button in (self.copy_prompt_button, self.next_prompt_button, self.open_prompts_button, self.open_output_button):
             button.setEnabled(enable)
         if not enable:
             self.prompt_preview.setPlainText("สินค้านี้ยังไม่พร้อมส่ง GPT2 กรุณาดูรายงานการตรวจ")
             return
-        self.current_prompt_files = sorted(result.ready_gpt2_dir.glob("*_gpt2_prompt.txt"))
+        prompt_dir = result.ready_gpt2_dir if result else None
+        if prompt_dir and prompt_dir.exists():
+            self.current_prompt_files = sorted(prompt_dir.glob("*_gpt2_prompt.txt"))
         self.populate_prompts()
         if self.current_prompt_files:
             self.prompt_list.selectRow(0)
@@ -586,7 +689,7 @@ class MainWindow(QMainWindow):
 
     def on_prompt_selected(self) -> None:
         selected = self.prompt_list.selectionModel().selectedRows()
-        if not selected:
+        if not selected or not self.current_prompt_files:
             return
         self.current_prompt_index = selected[0].row()
         path = self.current_prompt_files[self.current_prompt_index]
@@ -612,9 +715,6 @@ class MainWindow(QMainWindow):
         result = self.selected_result()
         if result and result.ready_gpt2_dir:
             self.open_path(result.ready_gpt2_dir)
-            return
-        if self.current_prompt_files:
-            self.open_path(self.current_prompt_files[0].parent)
 
     def open_selected_output(self) -> None:
         result = self.selected_result()
