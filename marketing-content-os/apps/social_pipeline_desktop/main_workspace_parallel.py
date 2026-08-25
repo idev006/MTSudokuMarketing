@@ -51,7 +51,13 @@ except ImportError:
 
 
 class PathManager:
-    """All paths are resolved relative to this app file, not the operator OS drive."""
+    """Resolve app paths from this file, then expose repo-relative paths for UI assets.
+
+    Policy:
+    - Internal path discovery may use absolute Path objects derived from __file__.
+    - UI asset references for QSS/QIcon use repo-relative strings.
+    - No drive-specific path such as F:\\ or D:\\ is hard-coded in the app.
+    """
 
     def __init__(self) -> None:
         self.app_dir = Path(__file__).resolve().parent
@@ -60,6 +66,12 @@ class PathManager:
         self.default_workspace = self.repo_root / "_operator_workspace"
         self.sku_lookup = self.content_os_root / "schemas" / "sku_lookup_v1.tsv"
         self.icon_dir = self.app_dir / "assets" / "icons"
+
+    def repo_relative(self, path: Path) -> str:
+        try:
+            return path.resolve().relative_to(self.repo_root.resolve()).as_posix()
+        except ValueError:
+            return path.as_posix()
 
     def sku_workspace(self, sku: str) -> Path:
         return self.default_workspace / sku
@@ -70,8 +82,11 @@ class PathManager:
     def icon_path(self, name: str) -> Path:
         return self.icon_dir / name
 
+    def icon_ref(self, name: str) -> str:
+        return self.repo_relative(self.icon_path(name))
+
     def qss_icon_url(self, name: str) -> str:
-        return self.icon_path(name).resolve().as_posix()
+        return self.icon_ref(name)
 
 
 class ParallelWorker(QThread):
@@ -215,6 +230,7 @@ class MainWindow(QMainWindow):
         layout.setContentsMargins(14, 12, 14, 12)
         layout.setHorizontalSpacing(12)
         layout.setVerticalSpacing(10)
+
         title = QLabel("1. เลือกสินค้า แล้วสร้างคำสั่งสำหรับ GPT1")
         title.setObjectName("PanelTitle")
         help_text = QLabel("โปรแกรมจะสร้างคำสั่ง GPT1 ให้คัดลอกไปวางได้ทันที แล้วเปิดโฟลเดอร์ raw สำหรับบันทึกคำตอบ")
@@ -222,6 +238,7 @@ class MainWindow(QMainWindow):
         help_text.setWordWrap(True)
         layout.addWidget(title, 0, 0, 1, 3)
         layout.addWidget(help_text, 1, 0, 1, 3)
+
         layout.addWidget(QLabel("เลือกสินค้า:"), 2, 0)
         self.product_combo = QComboBox()
         self.product_combo.setMinimumWidth(560)
@@ -232,15 +249,18 @@ class MainWindow(QMainWindow):
             self.product_combo.addItem("ไม่พบฐานข้อมูลสินค้า — กรุณาตรวจ sku_lookup_v1.tsv", {"SKU": "<SKU>"})
         self.product_combo.currentIndexChanged.connect(self.on_product_changed)
         layout.addWidget(self.product_combo, 2, 1, 1, 2)
+
         self.product_card = QTextEdit()
         self.product_card.setReadOnly(True)
         self.product_card.setMinimumHeight(110)
         layout.addWidget(self.product_card, 3, 0, 1, 2)
+
         self.gpt1_preview = QTextEdit()
         self.gpt1_preview.setReadOnly(True)
         self.gpt1_preview.setMinimumHeight(180)
         layout.addWidget(QLabel("คำสั่ง GPT1 ที่จะนำไปวาง:"), 3, 2)
         layout.addWidget(self.gpt1_preview, 4, 2, 3, 1)
+
         count_panel = QFrame()
         count_layout = QHBoxLayout(count_panel)
         count_layout.setContentsMargins(0, 0, 0, 0)
@@ -260,6 +280,7 @@ class MainWindow(QMainWindow):
             count_layout.addWidget(self.tiny_button(str(preset), lambda _=False, value=preset: self.set_n(value)))
         count_layout.addStretch(1)
         layout.addWidget(count_panel, 4, 0, 1, 2)
+
         action_row = QHBoxLayout()
         self.copy_gpt1_button = self.action_button("คัดลอกคำสั่ง GPT1", self.copy_gpt1_prompt, "SuccessButton")
         self.open_raw_button = self.action_button("เปิดโฟลเดอร์ raw ของสินค้านี้", self.open_current_raw_folder)
@@ -422,7 +443,7 @@ class MainWindow(QMainWindow):
         button.setObjectName("TinyButton")
         icon_path = self.paths.icon_path(icon_name)
         if icon_path.exists():
-            button.setIcon(QIcon(str(icon_path)))
+            button.setIcon(QIcon(self.paths.icon_ref(icon_name)))
         else:
             button.setText("+" if "plus" in icon_name else "−")
         button.setToolTip(tooltip)
