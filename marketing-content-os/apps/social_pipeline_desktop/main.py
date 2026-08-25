@@ -128,16 +128,23 @@ class MainWindow(QMainWindow):
             QFrame#StepBadge[active="true"] { background: #dff0ff; border: 2px solid #3b82f6; }
             QLabel#StepNumber { font-size: 18px; font-weight: 700; color: #1d4ed8; min-width: 26px; }
             QLabel#StepTitle { font-size: 13px; color: #26364d; }
-            QPushButton { padding: 9px 14px; border-radius: 8px; background: #e7edf7; border: 1px solid #cbd6e7; }
+            QPushButton { padding: 9px 14px; border-radius: 8px; background: #e7edf7; color: #172033; border: 1px solid #cbd6e7; }
             QPushButton:hover { background: #dbe7f7; }
-            QPushButton:disabled { color: #7c8797; background: #edf1f7; }
+            QPushButton:disabled { color: #64748b; background: #edf1f7; }
             QPushButton#PrimaryButton { background: #2563eb; color: #ffffff; font-size: 15px; font-weight: 700; border: 1px solid #1d4ed8; padding: 12px 18px; }
             QPushButton#SuccessButton { background: #059669; color: #ffffff; font-weight: 700; border: 1px solid #047857; }
             QPushButton#DangerButton { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-            QTableWidget { background: #ffffff; border: 1px solid #dbe3ef; border-radius: 8px; gridline-color: #edf2f7; }
+            QTableWidget { background: #ffffff; color: #172033; border: 1px solid #dbe3ef; border-radius: 8px; gridline-color: #edf2f7; }
             QTableWidget::item { padding: 4px; }
-            QTextEdit { background: #ffffff; border: 1px solid #dbe3ef; border-radius: 8px; padding: 8px; }
-            QLineEdit, QSpinBox { padding: 7px; border: 1px solid #cbd6e7; border-radius: 7px; background: #ffffff; }
+            QTextEdit { background: #ffffff; color: #172033; selection-background-color: #bfdbfe; selection-color: #0f172a; border: 1px solid #dbe3ef; border-radius: 8px; padding: 8px; }
+            QLineEdit { background: #ffffff; color: #172033; selection-background-color: #bfdbfe; selection-color: #0f172a; padding: 7px; border: 1px solid #94a3b8; border-radius: 7px; }
+            QLineEdit:disabled { background: #f1f5f9; color: #475569; }
+            QSpinBox { background: #ffffff; color: #172033; selection-background-color: #bfdbfe; selection-color: #0f172a; padding: 7px 28px 7px 8px; border: 1px solid #94a3b8; border-radius: 7px; min-height: 28px; }
+            QSpinBox::up-button { subcontrol-origin: border; subcontrol-position: top right; width: 22px; border-left: 1px solid #94a3b8; border-bottom: 1px solid #cbd5e1; background: #e2e8f0; border-top-right-radius: 7px; }
+            QSpinBox::down-button { subcontrol-origin: border; subcontrol-position: bottom right; width: 22px; border-left: 1px solid #94a3b8; background: #e2e8f0; border-bottom-right-radius: 7px; }
+            QSpinBox::up-button:hover, QSpinBox::down-button:hover { background: #cbd5e1; }
+            QSpinBox::up-arrow { image: none; width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 7px solid #0f172a; }
+            QSpinBox::down-arrow { image: none; width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 7px solid #0f172a; }
             QSplitter::handle { background: #d7e1f0; }
             QSplitter::handle:hover { background: #9db7dc; }
             """
