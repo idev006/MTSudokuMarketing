@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 SUPPORTED_INPUT_SUFFIXES = {".md", ".txt", ".text"}
-RECOMMENDED_POST_COUNT = 5
+TARGET_POST_COUNT = 10
 
 VISUAL_TYPE_PRIORITY = [
     "PRODUCT_HERO",
@@ -101,13 +101,16 @@ def _write_tsv_dicts(path: Path, fieldnames: list[str], rows: list[dict[str, str
         writer.writerows(rows)
 
 
-def recommend_rows(rows: list[dict[str, str]], limit: int = RECOMMENDED_POST_COUNT) -> list[dict[str, str]]:
+def recommend_rows(rows: list[dict[str, str]], limit: int = TARGET_POST_COUNT) -> list[dict[str, str]]:
     """Select a balanced default set of rows for one SKU.
 
-    The goal is not to replace human judgment. The goal is to remove the first
-    round of repetitive selection work by giving the operator a good 5-post
-    starting set: product introduction, activity/context, benefit, education,
-    and product/mockup when available.
+    Production target is 10 social posts per SKU. GPT1 should generate 10 rows
+    per SKU, and this app should prepare those 10 rows for GPT2 whenever the
+    deterministic clean/validation gate passes.
+
+    The priority pass keeps diverse VISUAL_TYPE ordering where possible, then
+    fills any remaining slots from the original clean row order. It reduces
+    repetitive manual sorting while preserving operator review.
     """
     selected: list[dict[str, str]] = []
     selected_ids: set[str] = set()
@@ -154,7 +157,7 @@ def create_selected_outputs(clean_file: Path, output_root: Path, raw_stem: str) 
     fieldnames, rows = _read_tsv_dicts(clean_file)
     selected = recommend_rows(rows)
 
-    selected_file = output_root / "selected" / f"{raw_stem}_selected_5.tsv"
+    selected_file = output_root / "selected" / f"{raw_stem}_selected_10.tsv"
     prompts_folder = output_root / "handoff" / raw_stem
     summary_file = output_root / "handoff" / f"{raw_stem}_handoff_index.tsv"
 
@@ -282,6 +285,7 @@ def write_batch_summary(output_root: Path, summary: PipelineBatchSummary) -> Pat
         "fail_count": summary.fail_count,
         "selected_row_count": summary.selected_row_count,
         "prompt_file_count": summary.prompt_file_count,
+        "target_posts_per_sku": TARGET_POST_COUNT,
         "results": [
             {
                 "raw_file": str(result.raw_file),
