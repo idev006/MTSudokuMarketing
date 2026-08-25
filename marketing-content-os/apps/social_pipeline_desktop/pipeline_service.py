@@ -8,7 +8,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 SUPPORTED_INPUT_SUFFIXES = {".md", ".txt", ".text"}
-TARGET_POST_COUNT = 10
+MIN_POST_COUNT = 1
+MAX_POST_COUNT = 60
+DEFAULT_POST_COUNT = 10
 
 VISUAL_TYPE_PRIORITY = [
     "PRODUCT_HERO",
@@ -35,6 +37,7 @@ class CleanResult:
     status: str
     extracted_rows: int
     expected_rows: int
+    target_posts: int
     selected_rows: int
     prompt_files: int
     exit_code: int
@@ -49,9 +52,16 @@ class PipelineBatchSummary:
     raw_file_count: int
     pass_count: int
     fail_count: int
+    target_posts_per_file: int
     selected_row_count: int
     prompt_file_count: int
     results: list[CleanResult] = field(default_factory=list)
+
+
+def validate_post_count(value: int) -> int:
+    if value < MIN_POST_COUNT or value > MAX_POST_COUNT:
+        raise ValueError(f"Post count N must be between {MIN_POST_COUNT} and {MAX_POST_COUNT}. Got: {value}")
+    return value
 
 
 def find_repo_root(start: Path | None = None) -> Path:
@@ -101,17 +111,18 @@ def _write_tsv_dicts(path: Path, fieldnames: list[str], rows: list[dict[str, str
         writer.writerows(rows)
 
 
-def recommend_rows(rows: list[dict[str, str]], limit: int = TARGET_POST_COUNT) -> list[dict[str, str]]:
-    """Select a balanced default set of rows for one SKU.
+def recommend_rows(rows: list[dict[str, str]], limit: int) -> list[dict[str, str]]:
+    """Prepare up to N rows for GPT2 handoff.
 
-    Production target is 10 social posts per SKU. GPT1 should generate 10 rows
-    per SKU, and this app should prepare those 10 rows for GPT2 whenever the
-    deterministic clean/validation gate passes.
+    N is operator-defined and must be 1..60. In normal production the operator
+    should ask GPT1 for NUMBER_OF_ROWS=N. After deterministic validation passes,
+    this function prepares N rows for GPT2 using a stable and readable order.
 
-    The priority pass keeps diverse VISUAL_TYPE ordering where possible, then
-    fills any remaining slots from the original clean row order. It reduces
-    repetitive manual sorting while preserving operator review.
+    The first pass prioritizes VISUAL_TYPE diversity. The second pass fills any
+    remaining slots from the original clean row order. This makes output useful
+    immediately while still preserving the complete clean TSV for review.
     """
+    validate_post_count(limit)
     selected: list[dict[str, str]] = []
     selected_ids: set[str] = set()
 
@@ -153,11 +164,17 @@ def build_gpt2_template(row_text: str) -> str:
     )
 
 
-def create_selected_outputs(clean_file: Path, output_root: Path, raw_stem: str) -> tuple[Path, Path, Path, int, int]:
+def create_selected_outputs(
+    clean_file: Path,
+    output_root: Path,
+    raw_stem: str,
+    target_posts: int,
+) -> tuple[Path, Path, Path, int, int]:
+    target_posts = validate_post_count(target_posts)
     fieldnames, rows = _read_tsv_dicts(clean_file)
-    selected = recommend_rows(rows)
+    selected = recommend_rows(rows, limit=target_posts)
 
-    selected_file = output_root / "selected" / f"{raw_stem}_selected_10.tsv"
+    selected_file = output_root / "selected" / f"{raw_stem}_selected_{target_posts}.tsv"
     prompts_folder = output_root / "handoff" / raw_stem
     summary_file = output_root / "handoff" / f"{raw_stem}_handoff_index.tsv"
 
@@ -197,9 +214,11 @@ def clean_one_file(
     repo_root: Path,
     output_root: Path,
     expected_rows: int,
+    target_posts: int,
     allow_visual_concentration: bool = False,
     allow_angle_concentration: bool = False,
 ) -> CleanResult:
+    target_posts = validate_post_count(target_posts)
     safe_stem = raw_file.stem
     clean_dir = output_root / "clean"
     report_dir = output_root / "reports"
@@ -249,9 +268,12 @@ def clean_one_file(
     if status == "PASS":
         try:
             selected_file, prompt_folder, summary_file, selected_rows, prompt_files = create_selected_outputs(
-                clean_file, output_root, safe_stem
+                clean_file, output_root, safe_stem, target_posts
             )
-            next_action = "Use generated GPT2 prompts"
+            if selected_rows < target_posts:
+                next_action = f"Only {selected_rows}/{target_posts} prompts generated; inspect clean TSV"
+            else:
+                next_action = f"Use generated {prompt_files} GPT2 prompts"
         except Exception as exc:  # noqa: BLE001
             status = "FAIL"
             next_action = "Selected output generation failed; open report"
@@ -267,6 +289,7 @@ def clean_one_file(
         status=status,
         extracted_rows=extracted_rows,
         expected_rows=expected_rows,
+        target_posts=target_posts,
         selected_rows=selected_rows,
         prompt_files=prompt_files,
         exit_code=completed.returncode,
@@ -283,15 +306,18 @@ def write_batch_summary(output_root: Path, summary: PipelineBatchSummary) -> Pat
         "raw_file_count": summary.raw_file_count,
         "pass_count": summary.pass_count,
         "fail_count": summary.fail_count,
+        "target_posts_per_file": summary.target_posts_per_file,
         "selected_row_count": summary.selected_row_count,
         "prompt_file_count": summary.prompt_file_count,
-        "target_posts_per_sku": TARGET_POST_COUNT,
         "results": [
             {
                 "raw_file": str(result.raw_file),
                 "status": result.status,
                 "extracted_rows": result.extracted_rows,
                 "expected_rows": result.expected_rows,
+                "target_posts": result.target_posts,
+                "selected_rows": result.selected_rows,
+                "prompt_files": result.prompt_files,
                 "clean_file": str(result.clean_file),
                 "report_file": str(result.report_file),
                 "selected_file": str(result.selected_file) if result.selected_file else "",
@@ -309,11 +335,14 @@ def write_batch_summary(output_root: Path, summary: PipelineBatchSummary) -> Pat
 def clean_folder(
     input_folder: Path,
     *,
-    expected_rows: int = 10,
+    expected_rows: int = DEFAULT_POST_COUNT,
+    target_posts: int | None = None,
     output_folder: Path | None = None,
     allow_visual_concentration: bool = False,
     allow_angle_concentration: bool = False,
 ) -> PipelineBatchSummary:
+    expected_rows = validate_post_count(expected_rows)
+    target_posts = validate_post_count(target_posts if target_posts is not None else expected_rows)
     repo_root = find_repo_root()
     raw_files = discover_raw_files(input_folder)
     output_root = output_folder or (input_folder / "_cleaned")
@@ -327,6 +356,7 @@ def clean_folder(
                 repo_root=repo_root,
                 output_root=output_root,
                 expected_rows=expected_rows,
+                target_posts=target_posts,
                 allow_visual_concentration=allow_visual_concentration,
                 allow_angle_concentration=allow_angle_concentration,
             )
@@ -338,6 +368,7 @@ def clean_folder(
         raw_file_count=len(raw_files),
         pass_count=sum(1 for result in results if result.status == "PASS"),
         fail_count=sum(1 for result in results if result.status != "PASS"),
+        target_posts_per_file=target_posts,
         selected_row_count=sum(result.selected_rows for result in results),
         prompt_file_count=sum(result.prompt_files for result in results),
         results=results,
