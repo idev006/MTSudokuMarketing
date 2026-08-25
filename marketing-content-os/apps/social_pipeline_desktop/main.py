@@ -11,7 +11,6 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QFrame,
     QGridLayout,
-    QGroupBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -29,6 +28,9 @@ from PySide6.QtWidgets import (
 
 try:
     from .pipeline_service import (
+        DEFAULT_POST_COUNT,
+        MAX_POST_COUNT,
+        MIN_POST_COUNT,
         CleanResult,
         PipelineBatchSummary,
         clean_folder,
@@ -38,6 +40,9 @@ try:
     )
 except ImportError:  # Allows direct file launch.
     from pipeline_service import (  # type: ignore
+        DEFAULT_POST_COUNT,
+        MAX_POST_COUNT,
+        MIN_POST_COUNT,
         CleanResult,
         PipelineBatchSummary,
         clean_folder,
@@ -51,10 +56,10 @@ class CleanWorker(QThread):
     finished_with_summary = Signal(object)
     failed = Signal(str)
 
-    def __init__(self, input_folder: Path, expected_rows: int, allow_visual: bool, allow_angle: bool) -> None:
+    def __init__(self, input_folder: Path, post_count: int, allow_visual: bool, allow_angle: bool) -> None:
         super().__init__()
         self.input_folder = input_folder
-        self.expected_rows = expected_rows
+        self.post_count = post_count
         self.allow_visual = allow_visual
         self.allow_angle = allow_angle
 
@@ -62,7 +67,8 @@ class CleanWorker(QThread):
         try:
             summary = clean_folder(
                 self.input_folder,
-                expected_rows=self.expected_rows,
+                expected_rows=self.post_count,
+                target_posts=self.post_count,
                 allow_visual_concentration=self.allow_visual,
                 allow_angle_concentration=self.allow_angle,
             )
@@ -121,8 +127,6 @@ class MainWindow(QMainWindow):
             QPushButton#PrimaryButton { background: #2563eb; color: #ffffff; font-size: 16px; font-weight: 700; border: 1px solid #1d4ed8; padding: 12px 18px; }
             QPushButton#SuccessButton { background: #059669; color: #ffffff; font-weight: 700; border: 1px solid #047857; }
             QPushButton#DangerButton { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-            QGroupBox { background: #ffffff; border: 1px solid #dbe3ef; border-radius: 10px; margin-top: 12px; padding: 12px; }
-            QGroupBox::title { subcontrol-origin: margin; left: 12px; padding: 0 4px; color: #304158; font-weight: 700; }
             QTableWidget { background: #ffffff; border: 1px solid #dbe3ef; border-radius: 8px; gridline-color: #edf2f7; }
             QTextEdit { background: #ffffff; border: 1px solid #dbe3ef; border-radius: 8px; padding: 8px; }
             QLineEdit, QSpinBox { padding: 7px; border: 1px solid #cbd6e7; border-radius: 7px; background: #ffffff; }
@@ -130,21 +134,21 @@ class MainWindow(QMainWindow):
         )
 
         self.step_badges = [
-            StepBadge("1", "เลือกโฟลเดอร์ raw จาก GPT1"),
+            StepBadge("1", "ตั้งค่า N และเลือกโฟลเดอร์"),
             StepBadge("2", "Clean + Validate ทุกไฟล์"),
-            StepBadge("3", "Auto เลือก 5 rows + สร้าง prompt"),
+            StepBadge("3", "เตรียม N rows + N prompts"),
             StepBadge("4", "Copy prompt ไป GPT2"),
             StepBadge("5", "สร้างภาพ + Human Review"),
         ]
 
         title = QLabel("BiiigBee Social Content Pipeline")
         title.setObjectName("AppTitle")
-        subtitle = QLabel("Operator cockpit: โปรแกรมจัดการ workflow ระหว่าง GPT1 → Cleaner → GPT2 ให้มากที่สุด")
+        subtitle = QLabel("Document-driven operator cockpit: GPT1 raw files → clean TSV → N GPT2 prompts, where 1 <= N <= 60")
         subtitle.setObjectName("AppSubtitle")
 
-        self.coach_title = QLabel("ตอนนี้ให้เลือกโฟลเดอร์ที่เก็บ raw output จาก GPT1")
+        self.coach_title = QLabel("ตั้งจำนวนรายการ N แล้วเลือกโฟลเดอร์ raw output จาก GPT1")
         self.coach_title.setObjectName("CoachTitle")
-        self.coach_text = QLabel("ใส่ไฟล์ .md / .txt / .text จาก GPT1 ไว้ในโฟลเดอร์เดียว แล้วกด Choose Folder")
+        self.coach_text = QLabel("เริ่มจาก GPT1 เสมอ: ใช้ NUMBER_OF_ROWS=N แล้ว save output เป็น .md หรือ .txt ในโฟลเดอร์เดียว")
         self.coach_text.setObjectName("CoachText")
         self.coach_text.setWordWrap(True)
         coach_card = QFrame()
@@ -170,13 +174,22 @@ class MainWindow(QMainWindow):
         self.input_folder.setPlaceholderText("ยังไม่ได้เลือกโฟลเดอร์")
         self.choose_folder_button = QPushButton("1. Choose Folder")
         self.choose_folder_button.clicked.connect(self.choose_folder)
-        self.clean_button = QPushButton("2. Clean All Files + Prepare GPT2 Prompts")
+        self.clean_button = QPushButton("2. Clean All Files + Prepare N GPT2 Prompts")
         self.clean_button.setObjectName("PrimaryButton")
         self.clean_button.clicked.connect(self.run_cleaner)
         self.clean_button.setEnabled(False)
-        self.expected_rows = QSpinBox()
-        self.expected_rows.setRange(1, 1000)
-        self.expected_rows.setValue(10)
+
+        self.post_count = QSpinBox()
+        self.post_count.setRange(MIN_POST_COUNT, MAX_POST_COUNT)
+        self.post_count.setValue(DEFAULT_POST_COUNT)
+        self.post_count.setToolTip("จำนวนรายการต่อไฟล์/SKU: 1 ถึง 60. ให้ GPT1 ใช้ NUMBER_OF_ROWS=N เดียวกัน")
+        self.post_count.valueChanged.connect(self.on_post_count_changed)
+
+        self.gpt1_prompt_preview = QTextEdit()
+        self.gpt1_prompt_preview.setReadOnly(True)
+        self.gpt1_prompt_preview.setMaximumHeight(85)
+        self.update_gpt1_prompt_preview()
+
         self.advanced_toggle = QCheckBox("Show advanced validation options")
         self.allow_visual = QCheckBox("Allow visual concentration")
         self.allow_angle = QCheckBox("Allow angle concentration")
@@ -187,18 +200,21 @@ class MainWindow(QMainWindow):
         self.progress.setRange(0, 100)
         self.progress.setValue(0)
 
-        start_group = QGroupBox("Start here")
+        start_group = QFrame()
+        start_group.setObjectName("CoachCard")
         start_layout = QGridLayout(start_group)
-        start_layout.addWidget(QLabel("Folder"), 0, 0)
-        start_layout.addWidget(self.input_folder, 0, 1)
-        start_layout.addWidget(self.choose_folder_button, 0, 2)
-        start_layout.addWidget(QLabel("Expected rows per file"), 1, 0)
-        start_layout.addWidget(self.expected_rows, 1, 1)
-        start_layout.addWidget(self.clean_button, 1, 2)
-        start_layout.addWidget(self.advanced_toggle, 2, 1)
-        start_layout.addWidget(self.allow_visual, 3, 1)
-        start_layout.addWidget(self.allow_angle, 4, 1)
-        start_layout.addWidget(self.progress, 5, 0, 1, 3)
+        start_layout.addWidget(QLabel("Post count N"), 0, 0)
+        start_layout.addWidget(self.post_count, 0, 1)
+        start_layout.addWidget(QLabel("Use this in GPT1 first"), 1, 0)
+        start_layout.addWidget(self.gpt1_prompt_preview, 1, 1, 1, 2)
+        start_layout.addWidget(QLabel("Folder"), 2, 0)
+        start_layout.addWidget(self.input_folder, 2, 1)
+        start_layout.addWidget(self.choose_folder_button, 2, 2)
+        start_layout.addWidget(self.clean_button, 3, 2)
+        start_layout.addWidget(self.advanced_toggle, 4, 1)
+        start_layout.addWidget(self.allow_visual, 5, 1)
+        start_layout.addWidget(self.allow_angle, 6, 1)
+        start_layout.addWidget(self.progress, 7, 0, 1, 3)
 
         self.table = QTableWidget(0, 6)
         self.table.setHorizontalHeaderLabels(["Status", "File", "Rows", "Selected", "Prompts", "Next Action"])
@@ -208,13 +224,13 @@ class MainWindow(QMainWindow):
 
         self.preview = QTextEdit()
         self.preview.setReadOnly(True)
-        self.preview.setPlaceholderText("โปรแกรมจะแสดง 5 selected rows และ prompt แรกสำหรับ GPT2 ที่นี่")
+        self.preview.setPlaceholderText("หลัง PASS โปรแกรมจะแสดง selected rows และ prompt แรกสำหรับ GPT2 ที่นี่")
 
         self.copy_prompt_button = QPushButton("3. Copy First GPT2 Prompt")
         self.copy_prompt_button.setObjectName("SuccessButton")
         self.copy_prompt_button.clicked.connect(self.copy_first_prompt)
         self.copy_prompt_button.setEnabled(False)
-        self.open_selected_button = QPushButton("Open Selected 5 Rows")
+        self.open_selected_button = QPushButton("Open Selected N Rows")
         self.open_selected_button.clicked.connect(self.open_selected_file)
         self.open_selected_button.setEnabled(False)
         self.open_prompts_button = QPushButton("Open GPT2 Prompts Folder")
@@ -291,6 +307,20 @@ class MainWindow(QMainWindow):
         self.coach_title.setText(title)
         self.coach_text.setText(text)
 
+    def update_gpt1_prompt_preview(self) -> None:
+        n = self.post_count.value()
+        self.gpt1_prompt_preview.setPlainText(
+            f"SKU: <SKU>\nNUMBER_OF_ROWS: {n}\nPLATFORM: AUTO\nCAMPAIGN_GOAL: AUTO"
+        )
+
+    def on_post_count_changed(self) -> None:
+        self.update_gpt1_prompt_preview()
+        self.set_coach(
+            1,
+            f"ตั้งค่า N = {self.post_count.value()} แล้ว",
+            f"ให้ใช้ NUMBER_OF_ROWS={self.post_count.value()} ใน GPT1 ก่อน จากนั้น save output เป็น .md หรือ .txt แล้วเลือกโฟลเดอร์",
+        )
+
     def toggle_advanced(self, checked: bool) -> None:
         self.allow_visual.setVisible(checked)
         self.allow_angle.setVisible(checked)
@@ -319,18 +349,14 @@ class MainWindow(QMainWindow):
 
         self.raw_count.setText(str(len(raw_files)))
         self.clean_button.setEnabled(len(raw_files) > 0)
-        self.copy_prompt_button.setEnabled(False)
-        self.open_selected_button.setEnabled(False)
-        self.open_prompts_button.setEnabled(False)
-        self.open_clean_button.setEnabled(False)
-        self.open_report_button.setEnabled(False)
-        self.open_output_button.setEnabled(False)
+        self.set_action_buttons(False)
 
         if raw_files:
+            n = self.post_count.value()
             self.set_coach(
                 2,
-                f"พบไฟล์ raw {len(raw_files)} ไฟล์ พร้อมให้โปรแกรมจัดการแล้ว",
-                "กดปุ่ม 2. Clean All Files + Prepare GPT2 Prompts โปรแกรมจะ clean, validate, เลือก 5 rows และสร้าง prompt สำหรับ GPT2 ให้เอง",
+                f"พบไฟล์ raw {len(raw_files)} ไฟล์ พร้อมจัดการ N = {n} รายการต่อไฟล์",
+                f"กดปุ่ม 2. Clean All Files + Prepare N GPT2 Prompts โปรแกรมจะ validate ว่ามี {n} rows และสร้าง {n} prompt ต่อไฟล์ที่ PASS",
             )
         else:
             self.set_coach(1, "ยังไม่พบไฟล์ raw", "นำ output จาก GPT1 ไป save เป็น .md หรือ .txt ในโฟลเดอร์นี้ แล้วเลือกโฟลเดอร์อีกครั้ง")
@@ -342,39 +368,45 @@ class MainWindow(QMainWindow):
         self.clean_button.setEnabled(False)
         self.table.setRowCount(0)
         self.preview.clear()
-        self.progress.setRange(0, 0)
-        self.set_coach(2, "กำลัง clean และเตรียม handoff", "โปรแกรมกำลังจัดการไฟล์ทั้งหมด: clean → validate → select 5 rows → generate GPT2 prompts")
+        self.progress.setValue(20)
+        n = self.post_count.value()
+        self.set_coach(2, f"กำลัง clean และเตรียม {n} prompts ต่อไฟล์", "โปรแกรมกำลังทำ deterministic validation และสร้าง output workspace ให้อัตโนมัติ")
 
-        self.worker = CleanWorker(
-            self.selected_folder,
-            self.expected_rows.value(),
-            self.allow_visual.isChecked(),
-            self.allow_angle.isChecked(),
-        )
+        self.worker = CleanWorker(self.selected_folder, n, self.allow_visual.isChecked(), self.allow_angle.isChecked())
         self.worker.finished_with_summary.connect(self.on_clean_finished)
         self.worker.failed.connect(self.on_clean_failed)
         self.worker.start()
 
     def on_clean_failed(self, message: str) -> None:
-        self.progress.setRange(0, 100)
-        self.progress.setValue(0)
         self.clean_button.setEnabled(True)
-        self.set_coach(2, "Cleaner failed", "เปิดรายละเอียด error แล้วแก้ input ก่อนรันใหม่")
+        self.progress.setValue(0)
+        self.set_coach(2, "Cleaner failed", "เปิด error message และแก้ไฟล์ raw หรือ environment ก่อนรันใหม่")
         QMessageBox.critical(self, "Cleaner failed", message)
 
     def on_clean_finished(self, summary: PipelineBatchSummary) -> None:
-        self.progress.setRange(0, 100)
+        self.summary = summary
+        self.results = list(summary.results)
         self.progress.setValue(100)
         self.clean_button.setEnabled(True)
-        self.summary = summary
-        self.results = summary.results
+        self.open_output_button.setEnabled(True)
         self.raw_count.setText(str(summary.raw_file_count))
         self.pass_count.setText(str(summary.pass_count))
         self.fail_count.setText(str(summary.fail_count))
         self.selected_count.setText(str(summary.selected_row_count))
         self.prompt_count.setText(str(summary.prompt_file_count))
-        self.open_output_button.setEnabled(True)
+        self.populate_table()
 
+        if summary.pass_count > 0:
+            self.auto_select_first_pass()
+            self.set_coach(
+                4,
+                f"เสร็จแล้ว: PASS={summary.pass_count}, สร้าง prompts={summary.prompt_file_count}",
+                "เลือกไฟล์ PASS แล้วกด Copy First GPT2 Prompt หรือเปิด GPT2 Prompts Folder เพื่อส่งต่อทีละรายการ",
+            )
+        else:
+            self.set_coach(3, "ยังไม่มีไฟล์ PASS", "เปิด report ของไฟล์ FAIL แล้วแก้ raw GPT1 output ก่อนส่งต่อ GPT2")
+
+    def populate_table(self) -> None:
         self.table.setRowCount(len(self.results))
         for row_index, result in enumerate(self.results):
             values = [
@@ -392,18 +424,11 @@ class MainWindow(QMainWindow):
                 self.table.setItem(row_index, col, item)
         self.table.resizeColumnsToContents()
 
-        if summary.pass_count > 0:
-            first_pass_index = next(index for index, result in enumerate(self.results) if result.status == "PASS")
-            self.table.selectRow(first_pass_index)
-            self.set_coach(
-                4,
-                f"เสร็จแล้ว: PASS={summary.pass_count}, FAIL={summary.fail_count}",
-                "โปรแกรมเลือกไฟล์ PASS แรกให้แล้ว และสร้าง selected 5 rows + GPT2 prompts ไว้ใน _cleaned แล้ว กด Copy First GPT2 Prompt เพื่อส่งเข้า GPT2",
-            )
-        elif self.results:
-            self.set_coach(3, "ยังไม่มีไฟล์ที่ PASS", "เปิด Report ของไฟล์ FAIL เพื่อดูสาเหตุ แล้วแก้ raw input หรือ rerun GPT1")
-        else:
-            self.set_coach(1, "ไม่พบไฟล์ raw", "เพิ่มไฟล์ .md หรือ .txt จาก GPT1 ก่อน")
+    def auto_select_first_pass(self) -> None:
+        for index, result in enumerate(self.results):
+            if result.status == "PASS":
+                self.table.selectRow(index)
+                return
 
     def selected_result(self) -> CleanResult | None:
         selected = self.table.selectionModel().selectedRows()
@@ -417,27 +442,37 @@ class MainWindow(QMainWindow):
     def on_selection_changed(self) -> None:
         result = self.selected_result()
         if result is None:
+            self.set_action_buttons(False)
             return
         is_pass = result.status == "PASS"
-        self.copy_prompt_button.setEnabled(is_pass and result.prompt_folder is not None)
+        self.copy_prompt_button.setEnabled(is_pass and result.prompt_files > 0)
         self.open_selected_button.setEnabled(is_pass and result.selected_file is not None)
         self.open_prompts_button.setEnabled(is_pass and result.prompt_folder is not None)
         self.open_clean_button.setEnabled(result.clean_file.exists())
         self.open_report_button.setEnabled(result.report_file.exists())
 
         if not is_pass:
-            self.preview.setPlainText("ไฟล์นี้ FAIL: อย่าส่งเข้า GPT2 ให้กด Open Report ก่อน")
-            self.set_coach(3, "ไฟล์นี้ยังไปต่อไม่ได้", "เปิด Report เพื่อดูสาเหตุ ห้าม copy raw หรือ clean file ที่ FAIL ไป GPT2")
+            self.preview.setPlainText("This file is FAIL. Open the report and fix before GPT2.")
+            self.set_coach(3, "ไฟล์นี้ยัง FAIL", "ห้ามส่งไฟล์นี้เข้า GPT2 ให้เปิด report ก่อน")
             return
 
-        selected_lines = []
-        if result.selected_file and result.selected_file.exists():
-            selected_lines = read_clean_rows(result.selected_file)
-        first_prompt = read_first_prompt(result.prompt_folder)
-        preview = "Selected 5 rows ready for GPT2:\n\n" + "\n".join(selected_lines)
-        preview += "\n\n--- First GPT2 prompt preview ---\n" + first_prompt[:2500]
-        self.preview.setPlainText(preview)
-        self.set_coach(4, "ไฟล์นี้พร้อมส่ง GPT2", "โปรแกรมเลือก 5 rows และสร้าง prompt ให้แล้ว กด Copy First GPT2 Prompt แล้ววางใน GPT2 Visual Prompt Refiner")
+        rows = read_clean_rows(result.selected_file or result.clean_file)
+        prompt = read_first_prompt(result.prompt_folder)
+        self.preview.setPlainText(
+            f"Selected rows ready for GPT2: {len(rows)}\n\n"
+            + "\n".join(rows[:10])
+            + "\n\n--- First GPT2 Prompt Preview ---\n"
+            + prompt[:2500]
+        )
+        self.set_coach(4, f"ไฟล์นี้ PASS และมี {result.prompt_files} GPT2 prompts", "กด Copy First GPT2 Prompt หรือเปิดโฟลเดอร์ prompts เพื่อส่งต่อ GPT2 ทีละรายการ")
+
+    def set_action_buttons(self, enabled: bool) -> None:
+        self.copy_prompt_button.setEnabled(enabled)
+        self.open_selected_button.setEnabled(enabled)
+        self.open_prompts_button.setEnabled(enabled)
+        self.open_clean_button.setEnabled(enabled)
+        self.open_report_button.setEnabled(enabled)
+        self.open_output_button.setEnabled(enabled)
 
     def copy_first_prompt(self) -> None:
         result = self.selected_result()
@@ -446,33 +481,31 @@ class MainWindow(QMainWindow):
             return
         prompt = read_first_prompt(result.prompt_folder)
         if not prompt:
-            QMessageBox.warning(self, "No prompt", "No GPT2 prompt found for this file.")
+            QMessageBox.warning(self, "No prompt", "No GPT2 prompt file found.")
             return
         QGuiApplication.clipboard().setText(prompt)
-        self.set_coach(5, "คัดลอก prompt แล้ว", "เปิด GPT2 Visual Prompt Refiner แล้ว paste prompt นี้ เมื่อ GPT2 ส่งผลกลับมา ใช้ image prompt ไปสร้างภาพและตรวจงานก่อนโพสต์")
+        self.set_coach(5, "คัดลอก GPT2 prompt แล้ว", "นำไปวางใน GPT2 Visual Prompt Refiner จากนั้นใช้ output ไปสร้างภาพและ review")
         QMessageBox.information(self, "Copied", "First GPT2 prompt copied to clipboard.")
-
-    def open_path(self, path: Path | None) -> None:
-        if path is None or not path.exists():
-            QMessageBox.warning(self, "Missing file", str(path or ""))
-            return
-        QDesktopServices.openUrl(QUrl.fromLocalFile(str(path)))
 
     def open_selected_file(self) -> None:
         result = self.selected_result()
-        self.open_path(result.selected_file if result else None)
+        if result and result.selected_file:
+            self.open_path(result.selected_file)
 
     def open_prompt_folder(self) -> None:
         result = self.selected_result()
-        self.open_path(result.prompt_folder if result else None)
+        if result and result.prompt_folder:
+            self.open_path(result.prompt_folder)
 
     def open_clean_file(self) -> None:
         result = self.selected_result()
-        self.open_path(result.clean_file if result else None)
+        if result:
+            self.open_path(result.clean_file)
 
     def open_report_file(self) -> None:
         result = self.selected_result()
-        self.open_path(result.report_file if result else None)
+        if result:
+            self.open_path(result.report_file)
 
     def open_output_folder(self) -> None:
         if self.summary:
@@ -480,10 +513,16 @@ class MainWindow(QMainWindow):
         elif self.selected_folder:
             self.open_path(self.selected_folder / "_cleaned")
 
+    def open_path(self, path: Path) -> None:
+        if not path.exists():
+            QMessageBox.warning(self, "Missing file", str(path))
+            return
+        QDesktopServices.openUrl(QUrl.fromLocalFile(str(path)))
+
     def reset_workflow(self) -> None:
-        self.selected_folder = None
-        self.summary = None
         self.results = []
+        self.summary = None
+        self.selected_folder = None
         self.input_folder.clear()
         self.table.setRowCount(0)
         self.preview.clear()
@@ -494,13 +533,8 @@ class MainWindow(QMainWindow):
         self.prompt_count.setText("0")
         self.progress.setValue(0)
         self.clean_button.setEnabled(False)
-        self.copy_prompt_button.setEnabled(False)
-        self.open_selected_button.setEnabled(False)
-        self.open_prompts_button.setEnabled(False)
-        self.open_clean_button.setEnabled(False)
-        self.open_report_button.setEnabled(False)
-        self.open_output_button.setEnabled(False)
-        self.set_coach(1, "ตอนนี้ให้เลือกโฟลเดอร์ที่เก็บ raw output จาก GPT1", "ใส่ไฟล์ .md / .txt / .text จาก GPT1 ไว้ในโฟลเดอร์เดียว แล้วกด Choose Folder")
+        self.set_action_buttons(False)
+        self.set_coach(1, "ตั้งจำนวนรายการ N แล้วเลือกโฟลเดอร์ raw output จาก GPT1", "เริ่มจาก GPT1 เสมอ: ใช้ NUMBER_OF_ROWS=N แล้ว save output เป็น .md หรือ .txt ในโฟลเดอร์เดียว")
 
 
 def main() -> int:
