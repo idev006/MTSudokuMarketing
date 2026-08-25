@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -30,6 +31,7 @@ except ImportError:
 
 IGNORED_WORKSPACE_DIRS = {
     "_cleaned",
+    "_ready_for_gpt2",
     "clean",
     "reports",
     "selected",
@@ -41,6 +43,10 @@ IGNORED_WORKSPACE_DIRS = {
     ".venv",
     "__pycache__",
 }
+
+READY_DIR_NAME = "_ready_for_gpt2"
+READY_INDEX_NAME = "_gpt2_ready_index.tsv"
+READY_README_NAME = "README_วิธีใช้.txt"
 
 
 @dataclass(frozen=True)
@@ -63,6 +69,8 @@ class WorkspaceJobResult:
     prompt_file_count: int
     output_root: Path
     summary: PipelineBatchSummary | None
+    ready_gpt2_dir: Path | None = None
+    ready_prompt_count: int = 0
     error_message: str = ""
 
 
@@ -76,6 +84,7 @@ class ParallelWorkspaceSummary:
     fail_job_count: int
     raw_file_count: int
     prompt_file_count: int
+    ready_prompt_file_count: int
     results: list[WorkspaceJobResult] = field(default_factory=list)
     summary_file: Path | None = None
 
@@ -141,6 +150,85 @@ def discover_workspace_jobs(selected_root: Path) -> list[WorkspaceJob]:
     return [direct_job] if direct_job else []
 
 
+def _relative_or_absolute(path: Path, root: Path) -> str:
+    try:
+        return str(path.resolve().relative_to(root.resolve()))
+    except ValueError:
+        return str(path)
+
+
+def _collect_generated_prompt_files(summary: PipelineBatchSummary) -> list[Path]:
+    prompt_files: list[Path] = []
+    for result in summary.results:
+        if result.status != "PASS" or result.prompt_folder is None:
+            continue
+        prompt_files.extend(sorted(result.prompt_folder.glob("*_gpt2_prompt.txt")))
+    return sorted(prompt_files)
+
+
+def _write_ready_readme(ready_dir: Path, sku: str, prompt_count: int) -> None:
+    readme = f"""ชุดคำสั่งพร้อมส่งเข้า GPT2 สำหรับสินค้า {sku}
+
+วิธีใช้:
+1. เปิดไฟล์ 01_gpt2_prompt.txt
+2. คัดลอกข้อความทั้งหมดในไฟล์
+3. วางใน GPT2 Visual Prompt Refiner
+4. เมื่อ GPT2 ตอบกลับ ให้ใช้เฉพาะ Final post copy และ Image-generation handoff ต่อไป
+5. ทำไฟล์ถัดไปตามลำดับ 02, 03, ... จนครบ
+
+จำนวนคำสั่ง GPT2 ที่เตรียมไว้: {prompt_count}
+
+ไฟล์ดัชนี:
+- {READY_INDEX_NAME}
+
+หมายเหตุ:
+- ไฟล์ในโฟลเดอร์นี้ถูกคัดลอกจากผลลัพธ์ที่ตรวจผ่านแล้วเท่านั้น
+- ไม่ต้องเปิด clean TSV เอง เว้นแต่ต้องการตรวจสอบเชิงเทคนิค
+"""
+    (ready_dir / READY_README_NAME).write_text(readme, encoding="utf-8")
+
+
+def _prepare_ready_for_gpt2(job: WorkspaceJob, summary: PipelineBatchSummary) -> tuple[Path, int]:
+    """Create a human-friendly GPT2-ready package for one SKU workspace.
+
+    The deterministic pipeline already creates canonical prompt files under
+    `_cleaned/handoff/...`. This function creates an operator-facing package:
+
+    `_ready_for_gpt2/01_gpt2_prompt.txt`, `02_gpt2_prompt.txt`, ...
+
+    These files are the only files the operator needs to copy into GPT2.
+    """
+    prompt_files = _collect_generated_prompt_files(summary)
+    ready_dir = job.workspace_dir / READY_DIR_NAME
+    if ready_dir.exists():
+        shutil.rmtree(ready_dir)
+    ready_dir.mkdir(parents=True, exist_ok=True)
+
+    width = max(2, len(str(len(prompt_files))))
+    index_lines = [
+        "ORDER\tSKU\tREADY_PROMPT_FILE\tSOURCE_PROMPT_FILE\tNEXT_ACTION"
+    ]
+    for index, source in enumerate(prompt_files, start=1):
+        ready_name = f"{index:0{width}d}_gpt2_prompt.txt"
+        destination = ready_dir / ready_name
+        shutil.copyfile(source, destination)
+        index_lines.append(
+            "\t".join(
+                [
+                    str(index),
+                    job.sku,
+                    _relative_or_absolute(destination, job.workspace_dir),
+                    _relative_or_absolute(source, job.workspace_dir),
+                    "Copy this whole file into GPT2 Visual Prompt Refiner",
+                ]
+            )
+        )
+
+    (ready_dir / READY_INDEX_NAME).write_text("\n".join(index_lines) + "\n", encoding="utf-8")
+    _write_ready_readme(ready_dir, job.sku, len(prompt_files))
+    return ready_dir, len(prompt_files)
+
+
 def _run_job(job: WorkspaceJob, post_count: int) -> WorkspaceJobResult:
     try:
         summary = clean_folder(
@@ -150,6 +238,10 @@ def _run_job(job: WorkspaceJob, post_count: int) -> WorkspaceJobResult:
             output_folder=job.output_dir,
         )
         status = "PASS" if summary.fail_count == 0 and summary.pass_count > 0 else "FAIL"
+        ready_dir: Path | None = None
+        ready_prompt_count = 0
+        if status == "PASS":
+            ready_dir, ready_prompt_count = _prepare_ready_for_gpt2(job, summary)
         return WorkspaceJobResult(
             job=job,
             status=status,
@@ -160,6 +252,8 @@ def _run_job(job: WorkspaceJob, post_count: int) -> WorkspaceJobResult:
             prompt_file_count=summary.prompt_file_count,
             output_root=summary.output_root,
             summary=summary,
+            ready_gpt2_dir=ready_dir,
+            ready_prompt_count=ready_prompt_count,
         )
     except Exception as exc:  # noqa: BLE001
         return WorkspaceJobResult(
@@ -172,6 +266,8 @@ def _run_job(job: WorkspaceJob, post_count: int) -> WorkspaceJobResult:
             prompt_file_count=0,
             output_root=job.output_dir,
             summary=None,
+            ready_gpt2_dir=None,
+            ready_prompt_count=0,
             error_message=str(exc),
         )
 
@@ -187,18 +283,21 @@ def _write_parallel_summary(summary: ParallelWorkspaceSummary) -> Path:
         "fail_job_count": summary.fail_job_count,
         "raw_file_count": summary.raw_file_count,
         "prompt_file_count": summary.prompt_file_count,
+        "ready_prompt_file_count": summary.ready_prompt_file_count,
         "results": [
             {
                 "sku": result.job.sku,
                 "workspace_dir": str(result.job.workspace_dir),
                 "raw_dir": str(result.job.raw_dir),
                 "output_root": str(result.output_root),
+                "ready_gpt2_dir": str(result.ready_gpt2_dir) if result.ready_gpt2_dir else "",
                 "status": result.status,
                 "raw_file_count": result.raw_file_count,
                 "pass_count": result.pass_count,
                 "fail_count": result.fail_count,
                 "selected_row_count": result.selected_row_count,
                 "prompt_file_count": result.prompt_file_count,
+                "ready_prompt_count": result.ready_prompt_count,
                 "error_message": result.error_message,
             }
             for result in summary.results
@@ -239,6 +338,7 @@ def process_workspace_parallel(
         fail_job_count=sum(1 for result in results if result.status != "PASS"),
         raw_file_count=sum(result.raw_file_count for result in results),
         prompt_file_count=sum(result.prompt_file_count for result in results),
+        ready_prompt_file_count=sum(result.ready_prompt_count for result in results),
         results=results,
     )
     summary_file = _write_parallel_summary(summary)
@@ -251,6 +351,7 @@ def process_workspace_parallel(
         fail_job_count=summary.fail_job_count,
         raw_file_count=summary.raw_file_count,
         prompt_file_count=summary.prompt_file_count,
+        ready_prompt_file_count=summary.ready_prompt_file_count,
         results=summary.results,
         summary_file=summary_file,
     )
@@ -260,6 +361,9 @@ __all__ = [
     "DEFAULT_POST_COUNT",
     "MAX_POST_COUNT",
     "MIN_POST_COUNT",
+    "READY_DIR_NAME",
+    "READY_INDEX_NAME",
+    "READY_README_NAME",
     "WorkspaceJob",
     "WorkspaceJobResult",
     "ParallelWorkspaceSummary",
