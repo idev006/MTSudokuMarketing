@@ -12,6 +12,25 @@ MIN_POST_COUNT = 1
 MAX_POST_COUNT = 60
 DEFAULT_POST_COUNT = 10
 
+# Folders that must never be treated as GPT1 raw input sources. This protects
+# reruns from accidentally ingesting generated README/report/diagnostic files.
+IGNORED_RAW_PARTS = {
+    "_cleaned",
+    "_ready_for_gpt2",
+    "_diagnostics",
+    "_runs",
+    "clean",
+    "reports",
+    "selected",
+    "handoff",
+    "prompts",
+    "images",
+    "final",
+    ".git",
+    ".venv",
+    "__pycache__",
+}
+
 VISUAL_TYPE_PRIORITY = [
     "PRODUCT_HERO",
     "STUDENT_ACTIVITY",
@@ -57,6 +76,9 @@ class CleanResult:
     exit_code: int
     message: str
     next_action: str
+    report_result: str = ""
+    normalizer_version: str = ""
+    auto_fix_count: int = 0
 
 
 @dataclass(frozen=True)
@@ -69,6 +91,7 @@ class PipelineBatchSummary:
     target_posts_per_file: int
     selected_row_count: int
     prompt_file_count: int
+    auto_fix_count: int = 0
     results: list[CleanResult] = field(default_factory=list)
 
 
@@ -86,28 +109,22 @@ def find_repo_root(start: Path | None = None) -> Path:
     raise RuntimeError("Repository root not found. Run from inside MTSudokuMarketing.")
 
 
+def _is_ignored_raw_path(path: Path) -> bool:
+    parts = {part.lower() for part in path.parts}
+    return any(ignored.lower() in parts for ignored in IGNORED_RAW_PARTS)
+
+
 def discover_raw_files(input_folder: Path) -> list[Path]:
     if not input_folder.exists() or not input_folder.is_dir():
         raise ValueError(f"Input folder not found: {input_folder}")
 
-    ignored_parts = {
-        "_cleaned",
-        "_ready_for_gpt2",
-        "clean",
-        "reports",
-        "selected",
-        "handoff",
-        "prompts",
-        "images",
-        "final",
-    }
     files: list[Path] = []
     for path in sorted(input_folder.rglob("*")):
         if not path.is_file():
             continue
         if path.suffix.lower() not in SUPPORTED_INPUT_SUFFIXES:
             continue
-        if any(part in ignored_parts for part in path.parts):
+        if _is_ignored_raw_path(path):
             continue
         files.append(path)
     return files
@@ -354,6 +371,9 @@ def clean_one_file(
     completed = subprocess.run(cmd, cwd=str(repo_root), text=True, capture_output=True, check=False)
     report = _read_report(report_file)
     extracted_rows = int(report.get("extracted_rows", 0) or 0)
+    report_result = str(report.get("result", "") or "")
+    normalizer_version = str(report.get("normalizer_version", "") or "")
+    auto_fix_count = int(report.get("auto_fix_count", 0) or 0)
     status = "PASS" if completed.returncode == 0 else "FAIL"
     message = (completed.stdout + completed.stderr).strip()
 
@@ -394,6 +414,9 @@ def clean_one_file(
         exit_code=completed.returncode,
         message=message,
         next_action=next_action,
+        report_result=report_result,
+        normalizer_version=normalizer_version,
+        auto_fix_count=auto_fix_count,
     )
 
 
@@ -408,15 +431,21 @@ def write_batch_summary(output_root: Path, summary: PipelineBatchSummary) -> Pat
         "target_posts_per_file": summary.target_posts_per_file,
         "selected_row_count": summary.selected_row_count,
         "prompt_file_count": summary.prompt_file_count,
+        "auto_fix_count": summary.auto_fix_count,
         "results": [
             {
                 "raw_file": str(result.raw_file),
                 "status": result.status,
+                "report_result": result.report_result,
+                "normalizer_version": result.normalizer_version,
+                "auto_fix_count": result.auto_fix_count,
                 "extracted_rows": result.extracted_rows,
                 "expected_rows": result.expected_rows,
                 "target_posts": result.target_posts,
                 "selected_rows": result.selected_rows,
                 "prompt_files": result.prompt_files,
+                "exit_code": result.exit_code,
+                "message": result.message,
                 "clean_file": str(result.clean_file),
                 "report_file": str(result.report_file),
                 "selected_file": str(result.selected_file) if result.selected_file else "",
@@ -470,6 +499,7 @@ def clean_folder(
         target_posts_per_file=target_posts,
         selected_row_count=sum(result.selected_rows for result in results),
         prompt_file_count=sum(result.prompt_files for result in results),
+        auto_fix_count=sum(result.auto_fix_count for result in results),
         results=results,
     )
     write_batch_summary(output_root, summary)
