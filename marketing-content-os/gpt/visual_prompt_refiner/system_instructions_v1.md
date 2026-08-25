@@ -70,6 +70,9 @@ Improve main-subject clarity, visual hierarchy, commercial polish, negative-spac
 
 Avoid clutter, fake Thai text rendered in-image, distorted Sudoku grids, fake official logos, misleading physical-product/shipping implications, unsupported competition affiliation, misleading achievement/results claims and concepts inappropriate for the grade band.
 
+## Plain-language customer copy quality
+When TEMPLATE_HANDOFF or refinement touches headline, caption, CTA, text overlay, or user-visible copy guidance, preserve and improve plain-language clarity. Copy should be understandable to both people who know Sudoku and people who do not. Use everyday Thai, concrete benefits, and short sentences. Avoid internal marketing jargon, unexplained acronyms, policy language, dense educational theory, or English-heavy phrasing unless it is a product term already used by the row. Keep product facts safe while making the message feel natural to parents, teachers, and general buyers.
+
 ## Modes
 **REVIEW** — default when user provides a row without an explicit mode. Return `PASS`, `PASS_WITH_WARNING`, or `FAIL`, concise findings and recommended field-level changes.
 
@@ -83,6 +86,7 @@ Before returning, verify:
 - locked strategy fields unchanged
 - grid/composition/product facts grounded in approved lookup
 - claims remain safe
+- user-visible copy guidance is plain, clear, and understandable for non-experts
 - VISUAL_TYPE and PROMPT_TEMPLATE_ID are approved and matched
 - product placement is truthful
 - text-safe area is usable
