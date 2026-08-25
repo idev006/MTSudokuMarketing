@@ -2,9 +2,23 @@
 
 Status: PILOT TOOL
 
-This PySide6 desktop app is a local operator tool for the BiiigBee Sudoku Marketing pipeline.
+This PySide6 desktop app is a local operator cockpit for the BiiigBee Sudoku Marketing pipeline.
 
 It is not a GPT. It supports the process between GPT1 and GPT2.
+
+## UX goal
+
+The operator should not need to remember the pipeline.
+
+The app should:
+
+- show the current stage;
+- explain the next action in one coach card;
+- keep advanced options hidden by default;
+- use one obvious primary button per stage;
+- auto-select the first `PASS` file after cleansing;
+- prepare a GPT2 `MODE: TEMPLATE_HANDOFF` prompt with one click;
+- never allow a `FAIL` file to be treated as GPT2-ready.
 
 ## Purpose
 
@@ -62,16 +76,26 @@ Direct file launch also works:
 .venv\Scripts\python.exe marketing-content-os\apps\social_pipeline_desktop\main.py
 ```
 
-## Operator steps
+## Operator flow
 
 1. Put GPT1 raw output files in one folder.
 2. Open the app.
 3. Click `1. Choose Folder`.
-4. Set expected rows per file, usually `10`.
+4. The app counts raw files and tells the operator whether it is ready.
 5. Click `2. Clean All Files`.
-6. If a file returns `PASS`, open the clean TSV and select 5 rows.
-7. Use `3. Copy First Row GPT2 Prompt` as a helper for the first row.
-8. Continue in GPT2 with `MODE: TEMPLATE_HANDOFF`.
+6. The app runs folder-level deterministic cleansing.
+7. The app shows `PASS`, `FAIL`, row count, and next action.
+8. Select a `PASS` file.
+9. Click `3. Copy GPT2 Prompt from Selected PASS File`.
+10. Paste into GPT2.
+
+## Guided UI behavior
+
+The app has a top coach card. It always tells the operator what to do now.
+
+The expected rows setting defaults to `10`, because the normal production pattern is GPT1 creates `10` rows so the operator can select the best `5` rows.
+
+Advanced concentration options are hidden by default. They should be used only when a reviewer explicitly approves an override.
 
 ## Rules
 
