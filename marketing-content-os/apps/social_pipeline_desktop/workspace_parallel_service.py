@@ -278,6 +278,21 @@ def _write_ready_readme(ready_dir: Path, sku: str, prompt_count: int) -> None:
     (ready_dir / READY_README_NAME).write_text(readme, encoding="utf-8")
 
 
+def _clear_job_generated_outputs(job: WorkspaceJob) -> list[str]:
+    """Remove generated outputs for this SKU before processing it again.
+
+    This guarantees that every rerun is rebuilt from raw GPT1 files and prevents
+    stale `_cleaned/` or `_ready_for_gpt2/` artifacts from surviving a failed or
+    partial rerun. It must never delete `raw/` or `GPT1_REQUEST.txt`.
+    """
+    removed: list[str] = []
+    for target in (job.output_dir, job.workspace_dir / READY_DIR_NAME):
+        if target.exists():
+            shutil.rmtree(target)
+            removed.append(str(target))
+    return removed
+
+
 def _prepare_ready_for_gpt2(job: WorkspaceJob, summary: PipelineBatchSummary) -> tuple[Path, int]:
     """Create a human-friendly GPT2-ready package for one SKU workspace."""
     prompt_files = _collect_generated_prompt_files(summary)
@@ -311,6 +326,7 @@ def _prepare_ready_for_gpt2(job: WorkspaceJob, summary: PipelineBatchSummary) ->
 
 def _run_job(job: WorkspaceJob, post_count: int) -> WorkspaceJobResult:
     try:
+        _clear_job_generated_outputs(job)
         summary = clean_folder(
             job.raw_dir,
             expected_rows=post_count,
