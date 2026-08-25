@@ -102,6 +102,17 @@ class ParallelWorkspaceSummary:
     run_mode: str = "all"
 
 
+def _normal_workspace_root(selected_root: Path) -> Path:
+    """Return the stable workspace root used for summary/diagnostics.
+
+    Operators may select `_operator_workspace`, one SKU folder, or a `raw/`
+    folder. If a raw folder is selected, generated summaries and diagnostics
+    should still live in the SKU workspace, not inside raw/.
+    """
+    root = selected_root.resolve()
+    return root.parent if root.name.lower() == "raw" else root
+
+
 def _looks_like_sku_workspace(path: Path) -> bool:
     return path.is_dir() and path.name not in IGNORED_WORKSPACE_DIRS and not path.name.startswith(".")
 
@@ -168,6 +179,15 @@ def _relative_or_absolute(path: Path, root: Path) -> str:
         return str(path.resolve().relative_to(root.resolve()))
     except ValueError:
         return str(path)
+
+
+def _safe_zip_arcname(path: Path, root: Path) -> str:
+    for base in (root, root.parent):
+        try:
+            return str(path.resolve().relative_to(base.resolve()))
+        except ValueError:
+            continue
+    return path.name
 
 
 def _read_json(path: Path) -> dict:
@@ -259,15 +279,7 @@ def _write_ready_readme(ready_dir: Path, sku: str, prompt_count: int) -> None:
 
 
 def _prepare_ready_for_gpt2(job: WorkspaceJob, summary: PipelineBatchSummary) -> tuple[Path, int]:
-    """Create a human-friendly GPT2-ready package for one SKU workspace.
-
-    The deterministic pipeline already creates canonical prompt files under
-    `_cleaned/handoff/...`. This function creates an operator-facing package:
-
-    `_ready_for_gpt2/01_gpt2_prompt.txt`, `02_gpt2_prompt.txt`, ...
-
-    These files are the only files the operator needs to copy into GPT2.
-    """
+    """Create a human-friendly GPT2-ready package for one SKU workspace."""
     prompt_files = _collect_generated_prompt_files(summary)
     ready_dir = job.workspace_dir / READY_DIR_NAME
     if ready_dir.exists():
@@ -275,9 +287,7 @@ def _prepare_ready_for_gpt2(job: WorkspaceJob, summary: PipelineBatchSummary) ->
     ready_dir.mkdir(parents=True, exist_ok=True)
 
     width = max(2, len(str(len(prompt_files))))
-    index_lines = [
-        "ORDER\tSKU\tREADY_PROMPT_FILE\tSOURCE_PROMPT_FILE\tNEXT_ACTION"
-    ]
+    index_lines = ["ORDER\tSKU\tREADY_PROMPT_FILE\tSOURCE_PROMPT_FILE\tNEXT_ACTION"]
     for index, source in enumerate(prompt_files, start=1):
         ready_name = f"{index:0{width}d}_gpt2_prompt.txt"
         destination = ready_dir / ready_name
@@ -352,9 +362,12 @@ def _run_job(job: WorkspaceJob, post_count: int) -> WorkspaceJobResult:
         )
 
 
+def _previous_summary_payload(selected_root: Path) -> dict:
+    return _read_json(_normal_workspace_root(selected_root) / PARALLEL_SUMMARY_NAME)
+
+
 def _previous_failed_skus(selected_root: Path) -> set[str]:
-    summary_path = selected_root / PARALLEL_SUMMARY_NAME
-    payload = _read_json(summary_path)
+    payload = _previous_summary_payload(selected_root)
     failed: set[str] = set()
     for item in payload.get("results", []):
         if str(item.get("status", "")) != "PASS":
@@ -364,6 +377,81 @@ def _previous_failed_skus(selected_root: Path) -> set[str]:
     return failed
 
 
+def _result_from_payload(item: dict, jobs_by_sku: dict[str, WorkspaceJob]) -> WorkspaceJobResult | None:
+    sku = str(item.get("sku", "")).strip()
+    if not sku:
+        return None
+    job = jobs_by_sku.get(sku)
+    if not job:
+        workspace_dir = Path(str(item.get("workspace_dir", "")))
+        raw_dir = Path(str(item.get("raw_dir", "")))
+        output_root = Path(str(item.get("output_root", workspace_dir / "_cleaned")))
+        job = WorkspaceJob(
+            sku=sku,
+            workspace_dir=workspace_dir,
+            raw_dir=raw_dir,
+            output_dir=output_root,
+            raw_file_count=int(item.get("raw_file_count", 0) or 0),
+        )
+    ready_dir_text = str(item.get("ready_gpt2_dir", "")).strip()
+    return WorkspaceJobResult(
+        job=job,
+        status=str(item.get("status", "FAIL") or "FAIL"),
+        raw_file_count=int(item.get("raw_file_count", 0) or 0),
+        pass_count=int(item.get("pass_count", 0) or 0),
+        fail_count=int(item.get("fail_count", 0) or 0),
+        selected_row_count=int(item.get("selected_row_count", 0) or 0),
+        prompt_file_count=int(item.get("prompt_file_count", 0) or 0),
+        output_root=Path(str(item.get("output_root", job.output_dir))),
+        summary=None,
+        ready_gpt2_dir=Path(ready_dir_text) if ready_dir_text else None,
+        ready_prompt_count=int(item.get("ready_prompt_count", 0) or 0),
+        error_message=str(item.get("error_message", "") or ""),
+        result_label=str(item.get("result_label", item.get("status", "")) or ""),
+        auto_fix_count=int(item.get("auto_fix_count", 0) or 0),
+        diagnosis=str(item.get("diagnosis", "") or ""),
+        next_action=str(item.get("next_action", "") or ""),
+    )
+
+
+def _load_previous_results(selected_root: Path, jobs_by_sku: dict[str, WorkspaceJob]) -> list[WorkspaceJobResult]:
+    payload = _previous_summary_payload(selected_root)
+    results: list[WorkspaceJobResult] = []
+    for item in payload.get("results", []):
+        result = _result_from_payload(item, jobs_by_sku)
+        if result:
+            results.append(result)
+    return results
+
+
+def _merge_previous_and_rerun_results(
+    previous_results: list[WorkspaceJobResult],
+    rerun_results: list[WorkspaceJobResult],
+    all_jobs: list[WorkspaceJob],
+) -> list[WorkspaceJobResult]:
+    merged_by_sku = {result.job.sku: result for result in previous_results}
+    for result in rerun_results:
+        merged_by_sku[result.job.sku] = result
+    for job in all_jobs:
+        if job.sku not in merged_by_sku:
+            merged_by_sku[job.sku] = WorkspaceJobResult(
+                job=job,
+                status="FAIL",
+                raw_file_count=job.raw_file_count,
+                pass_count=0,
+                fail_count=job.raw_file_count,
+                selected_row_count=0,
+                prompt_file_count=0,
+                output_root=job.output_dir,
+                summary=None,
+                result_label="FAIL_RECOVERABLE",
+                diagnosis="No previous summary entry exists for this raw workspace.",
+                next_action="Run full validation for this SKU.",
+                error_message="No previous summary entry exists for this raw workspace.",
+            )
+    return sorted(merged_by_sku.values(), key=lambda result: result.job.sku)
+
+
 def _filter_jobs_for_rerun(jobs: list[WorkspaceJob], selected_root: Path, run_mode: str) -> list[WorkspaceJob]:
     if run_mode == "all":
         return jobs
@@ -371,6 +459,31 @@ def _filter_jobs_for_rerun(jobs: list[WorkspaceJob], selected_root: Path, run_mo
         failed = _previous_failed_skus(selected_root)
         return [job for job in jobs if job.sku in failed]
     raise ValueError(f"Unsupported run_mode: {run_mode}")
+
+
+def _build_summary(
+    *,
+    selected_root: Path,
+    post_count: int,
+    max_workers: int,
+    run_id: str,
+    run_mode: str,
+    results: list[WorkspaceJobResult],
+) -> ParallelWorkspaceSummary:
+    return ParallelWorkspaceSummary(
+        selected_root=_normal_workspace_root(selected_root),
+        post_count=post_count,
+        max_workers=max_workers,
+        job_count=len(results),
+        pass_job_count=sum(1 for result in results if result.status == "PASS"),
+        fail_job_count=sum(1 for result in results if result.status != "PASS"),
+        raw_file_count=sum(result.raw_file_count for result in results),
+        prompt_file_count=sum(result.prompt_file_count for result in results),
+        ready_prompt_file_count=sum(result.ready_prompt_count for result in results),
+        results=results,
+        run_id=run_id,
+        run_mode=run_mode,
+    )
 
 
 def _write_parallel_summary(summary: ParallelWorkspaceSummary) -> Path:
@@ -417,7 +530,7 @@ def _write_parallel_summary(summary: ParallelWorkspaceSummary) -> Path:
 
 def cleanup_generated_outputs(selected_root: Path) -> dict[str, object]:
     """Delete only generated outputs; never delete raw GPT1 source files."""
-    root = selected_root.resolve()
+    root = _normal_workspace_root(selected_root)
     jobs = discover_workspace_jobs(root)
     removed: list[str] = []
     preserved: list[str] = []
@@ -442,7 +555,7 @@ def cleanup_generated_outputs(selected_root: Path) -> dict[str, object]:
 
 def export_diagnostic_zip(selected_root: Path, sku: str | None = None) -> Path:
     """Export a compact diagnostic bundle for failed or selected SKU workspaces."""
-    root = selected_root.resolve()
+    root = _normal_workspace_root(selected_root)
     jobs = discover_workspace_jobs(root)
     if sku:
         jobs = [job for job in jobs if job.sku == sku]
@@ -462,7 +575,7 @@ def export_diagnostic_zip(selected_root: Path, sku: str | None = None) -> Path:
 
     def add_if_exists(zf: zipfile.ZipFile, path: Path) -> None:
         if path.exists() and path.is_file():
-            zf.write(path, arcname=str(path.resolve().relative_to(root)))
+            zf.write(path, arcname=_safe_zip_arcname(path, root))
 
     with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
         add_if_exists(zf, root / PARALLEL_SUMMARY_NAME)
@@ -491,11 +604,30 @@ def process_workspace_parallel(
     run_mode: str = "all",
 ) -> ParallelWorkspaceSummary:
     post_count = validate_post_count(post_count)
-    all_jobs = discover_workspace_jobs(selected_root)
+    root = _normal_workspace_root(selected_root)
+    all_jobs = discover_workspace_jobs(root)
     if not all_jobs:
         raise ValueError("No GPT1 raw files were found in the selected folder or its SKU child folders.")
 
-    jobs = _filter_jobs_for_rerun(all_jobs, selected_root.resolve(), run_mode)
+    jobs_by_sku = {job.sku: job for job in all_jobs}
+    previous_results = _load_previous_results(root, jobs_by_sku) if run_mode == "failed_only" else []
+    jobs = _filter_jobs_for_rerun(all_jobs, root, run_mode)
+
+    if not jobs and run_mode == "failed_only":
+        if not previous_results:
+            raise ValueError("No previous summary was found. Use 'ตรวจใหม่ทั้งหมดจาก raw เดิม' first.")
+        run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+        summary = _build_summary(
+            selected_root=root,
+            post_count=post_count,
+            max_workers=0,
+            run_id=run_id,
+            run_mode=run_mode,
+            results=sorted(previous_results, key=lambda result: result.job.sku),
+        )
+        summary_file = _write_parallel_summary(summary)
+        return ParallelWorkspaceSummary(**{**summary.__dict__, "summary_file": summary_file})
+
     if not jobs:
         raise ValueError("No jobs selected for this rerun mode. Use run_mode='all' to process every raw file.")
 
@@ -503,44 +635,30 @@ def process_workspace_parallel(
         max_workers = min(4, len(jobs), max(1, os.cpu_count() or 1))
     max_workers = max(1, min(max_workers, 8, len(jobs)))
 
-    results: list[WorkspaceJobResult] = []
+    rerun_results: list[WorkspaceJobResult] = []
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_job = {executor.submit(_run_job, job, post_count): job for job in jobs}
         for future in as_completed(future_to_job):
-            results.append(future.result())
+            rerun_results.append(future.result())
 
-    results.sort(key=lambda result: result.job.sku)
+    rerun_results.sort(key=lambda result: result.job.sku)
+    results = (
+        _merge_previous_and_rerun_results(previous_results, rerun_results, all_jobs)
+        if run_mode == "failed_only"
+        else rerun_results
+    )
+
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
-    summary = ParallelWorkspaceSummary(
-        selected_root=selected_root.resolve(),
+    summary = _build_summary(
+        selected_root=root,
         post_count=post_count,
         max_workers=max_workers,
-        job_count=len(jobs),
-        pass_job_count=sum(1 for result in results if result.status == "PASS"),
-        fail_job_count=sum(1 for result in results if result.status != "PASS"),
-        raw_file_count=sum(result.raw_file_count for result in results),
-        prompt_file_count=sum(result.prompt_file_count for result in results),
-        ready_prompt_file_count=sum(result.ready_prompt_count for result in results),
-        results=results,
         run_id=run_id,
         run_mode=run_mode,
+        results=results,
     )
     summary_file = _write_parallel_summary(summary)
-    return ParallelWorkspaceSummary(
-        selected_root=summary.selected_root,
-        post_count=summary.post_count,
-        max_workers=summary.max_workers,
-        job_count=summary.job_count,
-        pass_job_count=summary.pass_job_count,
-        fail_job_count=summary.fail_job_count,
-        raw_file_count=summary.raw_file_count,
-        prompt_file_count=summary.prompt_file_count,
-        ready_prompt_file_count=summary.ready_prompt_file_count,
-        results=summary.results,
-        summary_file=summary_file,
-        run_id=run_id,
-        run_mode=run_mode,
-    )
+    return ParallelWorkspaceSummary(**{**summary.__dict__, "summary_file": summary_file})
 
 
 __all__ = [
