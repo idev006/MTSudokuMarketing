@@ -92,7 +92,21 @@ I know what to copy into GPT2.
 The program prevents unsafe handoff.
 ```
 
-## 8. Review result
+## 8. Control readability fix
+
+A follow-up screenshot showed that form controls could render text and spinner controls with insufficient contrast on some Windows/Qt themes.
+
+UI fix applied:
+
+- set explicit foreground colors for `QLineEdit`, `QTextEdit`, `QTableWidget`, and normal buttons;
+- set explicit selection colors for editable controls;
+- style `QSpinBox` text with dark foreground on white background;
+- add visible up/down spinner arrow shapes using dark CSS borders;
+- add a separate right-side spinner button background and hover state.
+
+This is required because production operators must be able to identify values such as `Post count N` without relying on OS theme defaults.
+
+## 9. Review result
 
 The updated UI is better aligned with the project's Level 3 operator-cockpit goal.
 
@@ -103,9 +117,10 @@ The app now supports:
 - better table and output visibility;
 - lower cognitive load;
 - more professional workflow control;
+- explicit control contrast independent of OS theme;
 - continued document-driven process compliance.
 
-## 9. Remaining improvement backlog
+## 10. Remaining improvement backlog
 
 These are not blockers, but are good next UX upgrades:
 
