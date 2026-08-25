@@ -1,10 +1,24 @@
 # BiiigBee Social Content Pipeline Desktop App
 
-Status: PILOT TOOL V2
+Status: PILOT TOOL V2.1 — 10 POSTS PER SKU
 
 This PySide6 desktop app is a local operator cockpit for the BiiigBee Sudoku Marketing pipeline.
 
 It is not a GPT. It supports the process between GPT1 and GPT2 and manages as much deterministic workflow as possible for the operator.
+
+## Current production goal
+
+The social media production target is now:
+
+```text
+1 SKU → 10 GPT1 rows → 10 cleaned rows → 10 GPT2 prompts → 10 social post packages
+```
+
+Across the approved catalog:
+
+```text
+24 SKUs × 10 posts = 240 social post packages
+```
 
 ## UX goal
 
@@ -23,7 +37,7 @@ The app does this by:
 - hiding advanced options by default;
 - disabling unsafe buttons until the file is ready;
 - running folder-level cleansing for all raw files;
-- automatically selecting 5 recommended rows per passing SKU file;
+- automatically preparing 10 rows per passing SKU file;
 - automatically generating GPT2 `MODE: TEMPLATE_HANDOFF` prompt files;
 - auto-selecting the first `PASS` file after processing;
 - blocking failed files from GPT2 handoff.
@@ -45,7 +59,7 @@ For each raw input file, the app creates a full `_cleaned` workspace:
 ```text
 <selected-folder>/_cleaned/clean/<raw_file_name>_clean.tsv
 <selected-folder>/_cleaned/reports/<raw_file_name>_clean_report.json
-<selected-folder>/_cleaned/selected/<raw_file_name>_selected_5.tsv
+<selected-folder>/_cleaned/selected/<raw_file_name>_selected_10.tsv
 <selected-folder>/_cleaned/handoff/<raw_file_name>/<order>_<ROW_ID>_gpt2_prompt.txt
 <selected-folder>/_cleaned/handoff/<raw_file_name>_handoff_index.tsv
 <selected-folder>/_cleaned/pipeline_batch_summary.json
@@ -57,13 +71,26 @@ For each raw input file, the app creates a full `_cleaned` workspace:
 1. GPT1 raw output files
 2. Folder-level deterministic cleansing
 3. Clean TSV validation gate
-4. Auto-select 5 recommended rows per PASS file
+4. Auto-prepare 10 rows per PASS file
 5. Auto-generate GPT2 TEMPLATE_HANDOFF prompts
 6. Operator pastes prompts into GPT2
 7. Image generation
 8. Human review
 9. Post-ready package
 ```
+
+## GPT1 first-step prompt
+
+Run this in GPT1 for each SKU:
+
+```text
+SKU: <SKU>
+NUMBER_OF_ROWS: 10
+PLATFORM: AUTO
+CAMPAIGN_GOAL: AUTO
+```
+
+Save the full GPT1 output as `.md` or `.txt` in a raw folder. Then select that folder in this desktop app.
 
 ## Install
 
@@ -96,18 +123,19 @@ Direct file launch also works:
 3. Click `1. Choose Folder`.
 4. The app counts raw files and tells the operator whether it is ready.
 5. Click `2. Clean All Files + Prepare GPT2 Prompts`.
-6. The app runs cleansing, validation, selected-row generation, prompt generation, and summary generation.
+6. The app runs cleansing, validation, 10-row generation, prompt generation, and summary generation.
 7. The app shows `PASS`, `FAIL`, row count, selected row count, GPT2 prompt count, and next action.
 8. Select a `PASS` file, or use the first auto-selected `PASS` file.
 9. Click `3. Copy First GPT2 Prompt`.
 10. Paste into GPT2 Visual Prompt Refiner.
-11. Use GPT2 output for image generation and human review.
+11. Continue through the generated GPT2 prompt files until all 10 post rows are refined.
+12. Use GPT2 output for image generation and human review.
 
 ## Guided UI behavior
 
 The app has a top coach card. It always tells the operator what to do now.
 
-The expected rows setting defaults to `10`, because the normal production pattern is GPT1 creates `10` rows so the system can select a balanced `5` rows.
+The expected rows setting defaults to `10`, because the current production pattern is GPT1 creates `10` rows per SKU and the system prepares all `10` rows for GPT2.
 
 Advanced concentration options are hidden by default. They should be used only when a reviewer explicitly approves an override.
 
@@ -120,8 +148,8 @@ Advanced concentration options are hidden by default. They should be used only w
 - PASS / FAIL classification.
 - Clean TSV generation.
 - Report JSON generation.
-- Recommended 5-row selection.
-- GPT2 prompt file generation.
+- 10-row selected TSV generation.
+- GPT2 prompt file generation for 10 rows.
 - Batch summary generation.
 - Next-action navigation.
 
@@ -135,6 +163,7 @@ Advanced concentration options are hidden by default. They should be used only w
 
 ## Rules
 
+- GPT1 is the required first step.
 - Raw GPT1 output is evidence only.
 - Clean validated TSV is the operational handoff artifact.
 - Do not send FAIL rows to GPT2.
