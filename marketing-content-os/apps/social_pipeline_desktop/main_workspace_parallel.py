@@ -36,6 +36,8 @@ try:
         READY_DIR_NAME,
         ParallelWorkspaceSummary,
         WorkspaceJobResult,
+        cleanup_generated_outputs,
+        export_diagnostic_zip,
         process_workspace_parallel,
     )
 except ImportError:
@@ -46,6 +48,8 @@ except ImportError:
         READY_DIR_NAME,
         ParallelWorkspaceSummary,
         WorkspaceJobResult,
+        cleanup_generated_outputs,
+        export_diagnostic_zip,
         process_workspace_parallel,
     )
 
@@ -93,11 +97,12 @@ class ParallelWorker(QThread):
     finished_with_summary = Signal(object)
     failed = Signal(str)
 
-    def __init__(self, root: Path, post_count: int, max_workers: int) -> None:
+    def __init__(self, root: Path, post_count: int, max_workers: int, run_mode: str) -> None:
         super().__init__()
         self.root = root
         self.post_count = post_count
         self.max_workers = max_workers
+        self.run_mode = run_mode
 
     def run(self) -> None:
         try:
@@ -106,6 +111,7 @@ class ParallelWorker(QThread):
                     self.root,
                     post_count=self.post_count,
                     max_workers=self.max_workers,
+                    run_mode=self.run_mode,
                 )
             )
         except Exception as exc:  # noqa: BLE001
@@ -174,6 +180,7 @@ class MainWindow(QMainWindow):
             QPushButton:disabled {{ color: #7c8797; background: #edf1f7; border: 1px solid #d8e0ee; }}
             QPushButton#PrimaryButton {{ background: #2563eb; color: #ffffff; font-size: 15px; font-weight: 800; border: 1px solid #1d4ed8; padding: 12px 18px; }}
             QPushButton#SuccessButton {{ background: #059669; color: #ffffff; font-weight: 800; border: 1px solid #047857; }}
+            QPushButton#DangerButton {{ background: #b45309; color: #ffffff; font-weight: 800; border: 1px solid #92400e; }}
             QPushButton#TinyButton {{ padding: 7px 12px; font-weight: 800; min-width: 36px; min-height: 32px; }}
             QLineEdit, QTextEdit, QComboBox {{ color: #10203a; background: #ffffff; border: 1px solid #94a3b8; border-radius: 8px; padding: 8px; selection-background-color: #bfdbfe; selection-color: #0f172a; }}
             QLineEdit:read-only {{ background: #f8fafc; color: #334155; }}
@@ -318,11 +325,22 @@ class MainWindow(QMainWindow):
         self.folder_path.setPlaceholderText("ยังไม่ได้เลือกโฟลเดอร์")
         layout.addWidget(self.folder_path, stretch=1)
         self.choose_button = self.action_button("เลือกโฟลเดอร์", self.choose_folder)
-        self.run_button = self.action_button("ตรวจหลายสินค้าแบบขนาน", self.run_parallel, "PrimaryButton")
+        self.run_all_button = self.action_button("ตรวจใหม่ทั้งหมดจาก raw เดิม", self.run_all, "PrimaryButton")
+        self.run_failed_button = self.action_button("ตรวจซ้ำเฉพาะที่ไม่ผ่าน", self.run_failed_only, "SuccessButton")
+        self.cleanup_button = self.action_button("ล้างเฉพาะผลลัพธ์ที่สร้างใหม่ได้", self.safe_cleanup_generated_outputs, "DangerButton")
+        self.diagnostic_button = self.action_button("สร้างไฟล์วินิจฉัย", self.export_diagnostic_bundle)
         self.open_root_button = self.action_button("เปิดโฟลเดอร์ที่เลือก", self.open_selected_root)
         self.open_summary_button = self.action_button("เปิดสรุปรวม", self.open_parallel_summary)
         self.open_summary_button.setEnabled(False)
-        for button in (self.choose_button, self.run_button, self.open_root_button, self.open_summary_button):
+        for button in (
+            self.choose_button,
+            self.run_all_button,
+            self.run_failed_button,
+            self.cleanup_button,
+            self.diagnostic_button,
+            self.open_root_button,
+            self.open_summary_button,
+        ):
             layout.addWidget(button)
         return panel
 
@@ -336,7 +354,8 @@ class MainWindow(QMainWindow):
         self.fail_metric = self.make_metric_card("0", "ไม่ผ่าน")
         self.raw_metric = self.make_metric_card("0", "ไฟล์ GPT1")
         self.prompt_metric = self.make_metric_card("0", "คำสั่ง GPT2")
-        for widget in (self.job_metric, self.pass_metric, self.fail_metric, self.raw_metric, self.prompt_metric):
+        self.autofix_metric = self.make_metric_card("0", "แก้อัตโนมัติ")
+        for widget in (self.job_metric, self.pass_metric, self.fail_metric, self.raw_metric, self.prompt_metric, self.autofix_metric):
             layout.addWidget(widget)
         self.progress = QProgressBar()
         self.progress.setRange(0, 100)
@@ -371,11 +390,23 @@ class MainWindow(QMainWindow):
         help_text.setWordWrap(True)
         layout.addWidget(title)
         layout.addWidget(help_text)
-        self.table = QTableWidget(0, 9)
-        self.table.setHorizontalHeaderLabels(["สถานะ", "สินค้า", "ไฟล์ GPT1", "ผ่าน", "ไม่ผ่าน", "คำสั่ง GPT2", "พร้อมส่ง GPT2", "โฟลเดอร์ผลลัพธ์", "ต้องทำต่อ"])
-        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
-        self.table.horizontalHeader().setSectionResizeMode(7, QHeaderView.Stretch)
-        self.table.horizontalHeader().setSectionResizeMode(8, QHeaderView.Stretch)
+        self.table = QTableWidget(0, 11)
+        self.table.setHorizontalHeaderLabels([
+            "สถานะ",
+            "ผลละเอียด",
+            "สินค้า",
+            "ไฟล์ GPT1",
+            "ผ่าน",
+            "ไม่ผ่าน",
+            "คำสั่ง GPT2",
+            "พร้อมส่ง GPT2",
+            "Auto-fix",
+            "โฟลเดอร์ผลลัพธ์",
+            "ต้องทำต่อ",
+        ])
+        self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        self.table.horizontalHeader().setSectionResizeMode(9, QHeaderView.Stretch)
+        self.table.horizontalHeader().setSectionResizeMode(10, QHeaderView.Stretch)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.itemSelectionChanged.connect(self.on_job_selected)
         layout.addWidget(self.table, stretch=1)
@@ -521,7 +552,7 @@ class MainWindow(QMainWindow):
         self.folder_path.setText(str(self.selected_root))
         self.save_gpt1_request_file(silent=True)
         self.open_path(raw_folder)
-        self.next_action.setText("ขั้นต่อไป: บันทึกคำตอบจาก GPT1 เป็นไฟล์ .md หรือ .txt ในโฟลเดอร์ raw แล้วไปแท็บ 2 เพื่อตรวจหลายสินค้าแบบขนาน")
+        self.next_action.setText("ขั้นต่อไป: บันทึกคำตอบจาก GPT1 เป็นไฟล์ .md หรือ .txt ในโฟลเดอร์ raw แล้วไปแท็บ 2 เพื่อตรวจคำตอบ GPT1")
 
     def get_n(self) -> int:
         try:
@@ -547,35 +578,59 @@ class MainWindow(QMainWindow):
             return
         self.selected_root = Path(folder)
         self.folder_path.setText(str(self.selected_root))
-        self.next_action.setText("ขั้นต่อไป: กด “ตรวจหลายสินค้าแบบขนาน”")
+        self.next_action.setText("ขั้นต่อไป: เลือกโหมดตรวจ — ตรวจใหม่ทั้งหมด หรือ ตรวจซ้ำเฉพาะที่ไม่ผ่าน")
 
-    def run_parallel(self) -> None:
+    def run_all(self) -> None:
+        self.run_parallel("all")
+
+    def run_failed_only(self) -> None:
+        self.run_parallel("failed_only")
+
+    def set_processing_buttons_enabled(self, enabled: bool) -> None:
+        for button in (
+            self.choose_button,
+            self.run_all_button,
+            self.run_failed_button,
+            self.cleanup_button,
+            self.diagnostic_button,
+            self.open_root_button,
+            self.open_summary_button,
+        ):
+            if button is self.open_summary_button and enabled:
+                button.setEnabled(self.summary is not None and self.summary.summary_file is not None)
+            else:
+                button.setEnabled(enabled)
+
+    def run_parallel(self, run_mode: str = "all") -> None:
         if self.selected_root is None:
             QMessageBox.warning(self, "ยังไม่ได้เลือกโฟลเดอร์", "กรุณาเลือก _operator_workspace หรือโฟลเดอร์สินค้าก่อน")
             return
         self.normalize_n()
         max_workers = int(self.worker_combo.currentData())
-        self.run_button.setEnabled(False)
+        self.set_processing_buttons_enabled(False)
         self.table.setRowCount(0)
         self.prompt_list.setRowCount(0)
-        self.prompt_preview.setPlainText("กำลังตรวจหลายสินค้าแบบขนาน...")
+        self.prompt_preview.setPlainText("กำลังตรวจคำตอบ GPT1...")
         self.progress.setValue(10)
-        self.next_action.setText("กำลังตรวจไฟล์ GPT1 หลายสินค้าแบบขนาน กรุณารอสักครู่")
-        self.worker = ParallelWorker(self.selected_root, self.get_n(), max_workers)
+        if run_mode == "failed_only":
+            self.next_action.setText("กำลังตรวจซ้ำเฉพาะรายการที่ไม่ผ่านรอบก่อน โดยไม่แตะ raw ของรายการอื่น")
+        else:
+            self.next_action.setText("กำลังตรวจใหม่ทั้งหมดจาก raw เดิม โดยไม่ลบหรือแก้ raw")
+        self.worker = ParallelWorker(self.selected_root, self.get_n(), max_workers, run_mode)
         self.worker.finished_with_summary.connect(self.on_finished)
         self.worker.failed.connect(self.on_failed)
         self.worker.start()
 
     def on_failed(self, message: str) -> None:
-        self.run_button.setEnabled(True)
+        self.set_processing_buttons_enabled(True)
         self.progress.setValue(0)
         self.next_action.setText("ตรวจไม่สำเร็จ: เปิดรายละเอียด error แล้วแก้ไขก่อน")
         QMessageBox.critical(self, "ตรวจไม่สำเร็จ", message)
 
     def on_finished(self, summary: ParallelWorkspaceSummary) -> None:
-        self.run_button.setEnabled(True)
         self.summary = summary
         self.results = list(summary.results)
+        self.set_processing_buttons_enabled(True)
         self.progress.setValue(100)
         self.open_summary_button.setEnabled(summary.summary_file is not None)
         self.set_metric(self.job_metric, str(summary.job_count))
@@ -583,15 +638,19 @@ class MainWindow(QMainWindow):
         self.set_metric(self.fail_metric, str(summary.fail_job_count))
         self.set_metric(self.raw_metric, str(summary.raw_file_count))
         self.set_metric(self.prompt_metric, str(summary.ready_prompt_file_count))
+        self.set_metric(self.autofix_metric, str(sum(getattr(result, "auto_fix_count", 0) for result in self.results)))
         self.populate_jobs()
         self.summary_preview.setPlainText(
             "\n".join(
                 [
+                    f"Run ID: {getattr(summary, 'run_id', '-') or '-'}",
+                    f"โหมดตรวจ: {self.thai_run_mode(getattr(summary, 'run_mode', 'all'))}",
                     f"สินค้า: {summary.job_count}",
                     f"ผ่าน: {summary.pass_job_count}",
                     f"ไม่ผ่าน: {summary.fail_job_count}",
                     f"ไฟล์ GPT1: {summary.raw_file_count}",
                     f"คำสั่ง GPT2 ที่พร้อมใช้: {summary.ready_prompt_file_count}",
+                    f"แก้อัตโนมัติ: {sum(getattr(result, 'auto_fix_count', 0) for result in self.results)} จุด",
                     f"สรุปรวม: {summary.summary_file or '-'}",
                 ]
             )
@@ -604,6 +663,9 @@ class MainWindow(QMainWindow):
         else:
             self.next_action.setText("ยังไม่มีสินค้าที่ผ่าน: เปิดรายงานในแต่ละ SKU แล้วแก้ไฟล์ GPT1")
 
+    def thai_run_mode(self, run_mode: str) -> str:
+        return "ตรวจซ้ำเฉพาะที่ไม่ผ่าน" if run_mode == "failed_only" else "ตรวจใหม่ทั้งหมดจาก raw เดิม"
+
     def set_metric(self, frame: QFrame, value: str) -> None:
         frame.value_label.setText(value)  # type: ignore[attr-defined]
 
@@ -611,21 +673,26 @@ class MainWindow(QMainWindow):
         self.table.setRowCount(len(self.results))
         for row, result in enumerate(self.results):
             ready_dir = result.ready_gpt2_dir or (result.job.workspace_dir / READY_DIR_NAME)
-            next_action = "เปิดโฟลเดอร์พร้อมส่ง GPT2" if result.status == "PASS" else "เปิดรายงานและแก้ก่อน"
+            result_label = getattr(result, "result_label", "") or result.status
+            auto_fix_count = str(getattr(result, "auto_fix_count", 0))
+            diagnosis = getattr(result, "diagnosis", "") or result.error_message
+            next_action = getattr(result, "next_action", "") or ("เปิดโฟลเดอร์พร้อมส่ง GPT2" if result.status == "PASS" else "เปิดรายงานและแก้ก่อน")
             values = [
                 result.status,
+                result_label,
                 result.job.sku,
                 str(result.raw_file_count),
                 str(result.pass_count),
                 str(result.fail_count),
                 str(result.prompt_file_count),
                 str(result.ready_prompt_count),
+                auto_fix_count,
                 str(ready_dir if result.status == "PASS" else result.output_root),
-                next_action if not result.error_message else result.error_message,
+                next_action if not result.error_message else result.error_message or diagnosis,
             ]
             for col, value in enumerate(values):
                 item = QTableWidgetItem(value)
-                if col in {0, 2, 3, 4, 5, 6}:
+                if col in {0, 1, 3, 4, 5, 6, 7, 8}:
                     item.setTextAlignment(Qt.AlignCenter)
                 self.table.setItem(row, col, item)
         self.table.resizeRowsToContents()
@@ -709,6 +776,53 @@ class MainWindow(QMainWindow):
     def open_parallel_summary(self) -> None:
         if self.summary and self.summary.summary_file:
             self.open_path(self.summary.summary_file)
+
+    def safe_cleanup_generated_outputs(self) -> None:
+        if self.selected_root is None:
+            QMessageBox.warning(self, "ยังไม่ได้เลือกโฟลเดอร์", "กรุณาเลือก _operator_workspace หรือโฟลเดอร์สินค้าก่อน")
+            return
+        answer = QMessageBox.question(
+            self,
+            "ล้างเฉพาะผลลัพธ์ที่สร้างใหม่ได้",
+            "ระบบจะลบเฉพาะ _cleaned, _ready_for_gpt2 และสรุปรวม\nจะไม่ลบ raw/ หรือ GPT1_REQUEST.txt\n\nดำเนินการต่อหรือไม่?",
+        )
+        if answer != QMessageBox.Yes:
+            return
+        try:
+            result = cleanup_generated_outputs(self.selected_root)
+        except Exception as exc:  # noqa: BLE001
+            QMessageBox.critical(self, "ล้างไม่สำเร็จ", str(exc))
+            return
+        self.summary = None
+        self.results = []
+        self.table.setRowCount(0)
+        self.prompt_list.setRowCount(0)
+        self.prompt_preview.setPlainText("ล้างผลลัพธ์ที่สร้างใหม่ได้แล้ว raw ยังอยู่ครบ")
+        self.open_summary_button.setEnabled(False)
+        self.progress.setValue(0)
+        self.next_action.setText("ล้างเฉพาะผลลัพธ์แล้ว: raw ยังอยู่ครบ สามารถกดตรวจใหม่ทั้งหมดจาก raw เดิมได้")
+        QMessageBox.information(
+            self,
+            "ล้างเสร็จแล้ว",
+            f"ลบผลลัพธ์ที่สร้างใหม่ได้ {len(result.get('removed_generated_outputs', []))} รายการ\nraw_deleted = {result.get('raw_deleted')}",
+        )
+
+    def export_diagnostic_bundle(self) -> None:
+        if self.selected_root is None:
+            QMessageBox.warning(self, "ยังไม่ได้เลือกโฟลเดอร์", "กรุณาเลือก _operator_workspace หรือโฟลเดอร์สินค้าก่อน")
+            return
+        sku = None
+        selected = self.selected_result()
+        if selected:
+            sku = selected.job.sku
+        try:
+            zip_path = export_diagnostic_zip(self.selected_root, sku=sku)
+        except Exception as exc:  # noqa: BLE001
+            QMessageBox.critical(self, "สร้างไฟล์วินิจฉัยไม่สำเร็จ", str(exc))
+            return
+        self.next_action.setText(f"สร้างไฟล์วินิจฉัยแล้ว: {zip_path}")
+        QMessageBox.information(self, "สร้างไฟล์วินิจฉัยแล้ว", str(zip_path))
+        self.open_path(zip_path.parent)
 
     def open_path(self, path: Path) -> None:
         if not path.exists():
