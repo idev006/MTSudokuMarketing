@@ -1,28 +1,36 @@
 # BiiigBee Social Content Pipeline Desktop App
 
-Status: PILOT TOOL
+Status: PILOT TOOL V2
 
 This PySide6 desktop app is a local operator cockpit for the BiiigBee Sudoku Marketing pipeline.
 
-It is not a GPT. It supports the process between GPT1 and GPT2.
+It is not a GPT. It supports the process between GPT1 and GPT2 and manages as much deterministic workflow as possible for the operator.
 
 ## UX goal
 
 The operator should not need to remember the pipeline.
 
-The app should:
+The app should answer one question at all times:
 
-- show the current stage;
-- explain the next action in one coach card;
-- keep advanced options hidden by default;
-- use one obvious primary button per stage;
-- auto-select the first `PASS` file after cleansing;
-- prepare a GPT2 `MODE: TEMPLATE_HANDOFF` prompt with one click;
-- never allow a `FAIL` file to be treated as GPT2-ready.
+```text
+What should I do now?
+```
+
+The app does this by:
+
+- showing a 5-stage guided flow;
+- using one coach card as the primary navigation instruction;
+- hiding advanced options by default;
+- disabling unsafe buttons until the file is ready;
+- running folder-level cleansing for all raw files;
+- automatically selecting 5 recommended rows per passing SKU file;
+- automatically generating GPT2 `MODE: TEMPLATE_HANDOFF` prompt files;
+- auto-selecting the first `PASS` file after processing;
+- blocking failed files from GPT2 handoff.
 
 ## Purpose
 
-The app lets an operator select one folder containing raw GPT1 output files and clean/validate every supported file in that folder.
+The app lets an operator select one folder containing raw GPT1 output files and process every supported file in that folder.
 
 Supported input file types:
 
@@ -32,11 +40,15 @@ Supported input file types:
 .text
 ```
 
-For each raw input file, the app creates:
+For each raw input file, the app creates a full `_cleaned` workspace:
 
 ```text
 <selected-folder>/_cleaned/clean/<raw_file_name>_clean.tsv
 <selected-folder>/_cleaned/reports/<raw_file_name>_clean_report.json
+<selected-folder>/_cleaned/selected/<raw_file_name>_selected_5.tsv
+<selected-folder>/_cleaned/handoff/<raw_file_name>/<order>_<ROW_ID>_gpt2_prompt.txt
+<selected-folder>/_cleaned/handoff/<raw_file_name>_handoff_index.tsv
+<selected-folder>/_cleaned/pipeline_batch_summary.json
 ```
 
 ## Process engineering pipeline
@@ -45,11 +57,12 @@ For each raw input file, the app creates:
 1. GPT1 raw output files
 2. Folder-level deterministic cleansing
 3. Clean TSV validation gate
-4. Select 5 best rows per SKU
-5. GPT2 TEMPLATE_HANDOFF
-6. Image generation
-7. Human review
-8. Post-ready package
+4. Auto-select 5 recommended rows per PASS file
+5. Auto-generate GPT2 TEMPLATE_HANDOFF prompts
+6. Operator pastes prompts into GPT2
+7. Image generation
+8. Human review
+9. Post-ready package
 ```
 
 ## Install
@@ -82,20 +95,43 @@ Direct file launch also works:
 2. Open the app.
 3. Click `1. Choose Folder`.
 4. The app counts raw files and tells the operator whether it is ready.
-5. Click `2. Clean All Files`.
-6. The app runs folder-level deterministic cleansing.
-7. The app shows `PASS`, `FAIL`, row count, and next action.
-8. Select a `PASS` file.
-9. Click `3. Copy GPT2 Prompt from Selected PASS File`.
-10. Paste into GPT2.
+5. Click `2. Clean All Files + Prepare GPT2 Prompts`.
+6. The app runs cleansing, validation, selected-row generation, prompt generation, and summary generation.
+7. The app shows `PASS`, `FAIL`, row count, selected row count, GPT2 prompt count, and next action.
+8. Select a `PASS` file, or use the first auto-selected `PASS` file.
+9. Click `3. Copy First GPT2 Prompt`.
+10. Paste into GPT2 Visual Prompt Refiner.
+11. Use GPT2 output for image generation and human review.
 
 ## Guided UI behavior
 
 The app has a top coach card. It always tells the operator what to do now.
 
-The expected rows setting defaults to `10`, because the normal production pattern is GPT1 creates `10` rows so the operator can select the best `5` rows.
+The expected rows setting defaults to `10`, because the normal production pattern is GPT1 creates `10` rows so the system can select a balanced `5` rows.
 
 Advanced concentration options are hidden by default. They should be used only when a reviewer explicitly approves an override.
+
+## What the app now handles for the operator
+
+- Folder discovery.
+- Raw file discovery.
+- Batch cleansing.
+- Validator execution.
+- PASS / FAIL classification.
+- Clean TSV generation.
+- Report JSON generation.
+- Recommended 5-row selection.
+- GPT2 prompt file generation.
+- Batch summary generation.
+- Next-action navigation.
+
+## What still requires human control
+
+- Running GPT1.
+- Running GPT2.
+- Final claim-safety and visual review.
+- Image generation review.
+- Publishing approval.
 
 ## Rules
 
