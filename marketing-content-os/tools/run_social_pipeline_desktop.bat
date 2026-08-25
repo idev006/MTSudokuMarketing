@@ -17,7 +17,7 @@ if not exist ".venv\Scripts\python.exe" (
   exit /b 2
 )
 
-".venv\Scripts\python.exe" marketing-content-os\apps\social_pipeline_desktop\main_queue.py
+".venv\Scripts\python.exe" marketing-content-os\apps\social_pipeline_desktop\main_workspace_parallel.py
 set "EXIT_CODE=%ERRORLEVEL%"
 
 popd >nul
