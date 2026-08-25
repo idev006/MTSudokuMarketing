@@ -1,6 +1,6 @@
-# Desktop Pipeline V2 Completion Review
+# Desktop Pipeline V2.1 Completion Review
 
-Status: PILOT COMPLETE
+Status: PILOT COMPLETE — 10 POSTS PER SKU
 Date: 2026-08-25
 Scope: `marketing-content-os/apps/social_pipeline_desktop`
 
@@ -10,7 +10,21 @@ Build a guided desktop operator cockpit that manages the deterministic parts of 
 
 The product goal is not only to clean files. The product goal is to reduce thinking load and prevent wrong handoff.
 
-## 2. Process engineering design target
+## 2. Current production target
+
+The current social media production target is:
+
+```text
+1 SKU → 10 GPT1 rows → 10 cleaned rows → 10 GPT2 prompts → 10 post packages
+```
+
+Across the approved catalog:
+
+```text
+24 SKUs × 10 posts = 240 post packages after GPT2, image generation, and human review
+```
+
+## 3. Process engineering design target
 
 The workflow must move one or more GPT1 raw output files through controlled gates:
 
@@ -19,7 +33,7 @@ The workflow must move one or more GPT1 raw output files through controlled gate
 2. Folder discovery
 3. Deterministic clean
 4. Validation gate
-5. Recommended 5-row selection
+5. 10-row preparation
 6. GPT2 handoff prompt generation
 7. GPT2 visual refinement
 8. Image generation
@@ -27,17 +41,17 @@ The workflow must move one or more GPT1 raw output files through controlled gate
 10. Post-ready package
 ```
 
-## 3. SIPOC
+## 4. SIPOC
 
 | Element | Design |
 |---|---|
 | Supplier | GPT1 Campaign Content Generator, human operator |
 | Input | folder containing `.md`, `.txt`, or `.text` GPT1 raw output files |
-| Process | discover → clean → validate → select 5 rows → generate GPT2 prompts → guide next action |
-| Output | clean TSV, reports, selected 5-row TSV, GPT2 prompt files, batch summary |
+| Process | discover → clean → validate → prepare 10 rows → generate GPT2 prompts → guide next action |
+| Output | clean TSV, reports, selected 10-row TSV, GPT2 prompt files, batch summary |
 | Customer | operator, GPT2 Visual Prompt Refiner, social content production process |
 
-## 4. Stage gates
+## 5. Stage gates
 
 | Gate | Pass condition | Failure action | App behavior |
 |---|---|---|---|
@@ -45,11 +59,11 @@ The workflow must move one or more GPT1 raw output files through controlled gate
 | G2 Raw files | supported files found | add `.md` / `.txt` files | coach card tells operator what to do |
 | G3 Clean | canonical rows extracted | rerun GPT1 or fix raw file | report JSON generated |
 | G4 Validate | validator exit code `0` | do not send to GPT2 | result remains `FAIL` |
-| G5 Select | 5 recommended rows generated | inspect clean TSV manually | selected TSV generated only after PASS |
+| G5 Prepare | up to 10 rows prepared | inspect clean TSV manually | selected TSV generated only after PASS |
 | G6 GPT2 prompt | prompt files generated | inspect selected rows | copy button enabled only for PASS |
 | G7 Publish | human review approved | do not publish | app does not publish |
 
-## 5. Automation boundary
+## 6. Automation boundary
 
 The app automates deterministic, repeatable work:
 
@@ -58,7 +72,7 @@ The app automates deterministic, repeatable work:
 - clean TSV generation;
 - deterministic validation;
 - PASS / FAIL classification;
-- 5-row recommended selection;
+- 10-row selected TSV generation;
 - GPT2 prompt file generation;
 - batch summary generation;
 - next-action navigation.
@@ -71,7 +85,7 @@ The app does not automate judgment-heavy work:
 - claim-safety human review;
 - publishing.
 
-## 6. UX design
+## 7. UX design
 
 The operator journey is intentionally reduced to 5 visible steps:
 
@@ -89,7 +103,7 @@ The app's coach card must always answer:
 What should I do now?
 ```
 
-## 7. Output workspace
+## 8. Output workspace
 
 For each selected folder, the app creates:
 
@@ -100,21 +114,22 @@ _cleaned/
   reports/
     <raw_file>_clean_report.json
   selected/
-    <raw_file>_selected_5.tsv
+    <raw_file>_selected_10.tsv
   handoff/
     <raw_file>/
       01_<ROW_ID>_gpt2_prompt.txt
       02_<ROW_ID>_gpt2_prompt.txt
-      03_<ROW_ID>_gpt2_prompt.txt
-      04_<ROW_ID>_gpt2_prompt.txt
-      05_<ROW_ID>_gpt2_prompt.txt
+      ...
+      10_<ROW_ID>_gpt2_prompt.txt
     <raw_file>_handoff_index.tsv
   pipeline_batch_summary.json
 ```
 
-## 8. Recommended 5-row selection logic
+## 9. 10-row preparation logic
 
-The default selection prefers a balanced 5-post set using `VISUAL_TYPE` priority:
+The default preparation target is 10 posts per SKU.
+
+The app prefers a balanced VISUAL_TYPE priority pass, then fills remaining slots from the clean row order:
 
 ```text
 PRODUCT_HERO
@@ -129,44 +144,46 @@ TEACHER_CLASSROOM
 COMPETITION
 ```
 
-The algorithm selects at most one row from each priority visual type before filling remaining slots from the clean row order. This reduces repetitive manual selection while preserving operator review.
+This reduces repetitive manual sorting while preserving operator review.
 
-## 9. Expected user feeling
+## 10. Expected user feeling
 
 The intended user experience is:
 
 ```text
-I only choose a folder and press one main button.
+I run GPT1 first.
+I save the raw output files into one folder.
+I choose the folder and press one main button.
 The program tells me what to do next.
 The program prevents me from sending bad files to GPT2.
-The program already prepares the 5 rows and prompts.
+The program already prepares 10 rows and 10 GPT2 prompts per passing SKU file.
 I do not need to understand TSV internals to continue.
 ```
 
-## 10. Expected production result
+## 11. Expected production result
 
 Per PASS raw GPT1 file, the operator should get:
 
 - 1 clean validated TSV;
 - 1 validation report;
-- 1 selected 5-row TSV;
-- 5 GPT2 handoff prompt files;
+- 1 selected 10-row TSV;
+- 10 GPT2 handoff prompt files;
 - 1 handoff index;
 - 1 batch-level summary.
 
 Per SKU, this supports the intended production target:
 
 ```text
-1 SKU → 10 GPT1 ideas → 5 selected posts → 5 GPT2 prompts → 5 post packages
+1 SKU → 10 GPT1 ideas → 10 selected posts → 10 GPT2 prompts → 10 post packages
 ```
 
 Across the full catalog:
 
 ```text
-24 SKUs × 5 posts = 120 post-ready packages after GPT2, image generation, and human review
+24 SKUs × 10 posts = 240 post-ready packages after GPT2, image generation, and human review
 ```
 
-## 11. Review result
+## 12. Review result
 
 ### What is complete
 
@@ -180,7 +197,7 @@ Across the full catalog:
 - Advanced options are hidden by default.
 - Clean button is gated by raw-file discovery.
 - GPT2 prompt copy is gated by PASS status.
-- Automatic 5-row selection exists.
+- Automatic 10-row selected TSV generation exists.
 - GPT2 prompt files are generated automatically.
 - Batch summary is generated.
 
@@ -193,4 +210,4 @@ Across the full catalog:
 
 ### Overall assessment
 
-The desktop app now satisfies the Level 3 workflow goal for pilot use: it is a guided operator cockpit that manages the deterministic pipeline and reduces operator cognitive load while preserving quality gates.
+The desktop app now satisfies the Level 3 workflow goal for pilot use under the 10-posts-per-SKU production target: it is a guided operator cockpit that manages the deterministic pipeline and reduces operator cognitive load while preserving quality gates.
